@@ -109,14 +109,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
     protected static final Object EMPTY = new Object();
 
-    protected static final int B_TREE_NODE_LEAF_LR = 180;
-    protected static final int B_TREE_NODE_LEAF_L = 181;
-    protected static final int B_TREE_NODE_LEAF_R = 182;
-    protected static final int B_TREE_NODE_LEAF_C = 183;
-    protected static final int B_TREE_NODE_DIR_LR = 184;
-    protected static final int B_TREE_NODE_DIR_L = 185;
-    protected static final int B_TREE_NODE_DIR_R = 186;
-    protected static final int B_TREE_NODE_DIR_C = 187;
+    protected static final int LEAF_MASK = 1<<15;
+    protected static final int LEFT_MASK = 1<<14;
+    protected static final int RIGHT_MASK = 1<<13;
+    protected static final int SIZE_MASK = RIGHT_MASK - 1;
 
 
 
@@ -338,11 +334,13 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             final boolean right = value.keys()[value.keys().length-1] == null;
 
 
-            final int header =  makeHeader(isLeaf, left, right);
+            final int header =
+                (isLeaf ? LEAF_MASK : 0) |
+                (left ? LEFT_MASK : 0) |
+                (right ? RIGHT_MASK : 0) |
+                value.keys().length;
 
-
-            out.write(header);
-            out.write(value.keys().length);
+            out.writeShort(header);
 
             //write node metas, right now this is ignored, but in future it could be used for counted btrees or aggregations
             for(int i=0;i<numberOfNodeMetas;i++){
@@ -387,38 +385,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }
         }
 
-        private int makeHeader(final boolean isLeaf, final boolean left, final boolean right) {
-            if(isLeaf){
-                if(right){
-                    if(left)
-                        return B_TREE_NODE_LEAF_LR;
-                    else
-                        return B_TREE_NODE_LEAF_R;
-                }else{
-                    if(left)
-                        return B_TREE_NODE_LEAF_L;
-                    else
-                        return B_TREE_NODE_LEAF_C;
-                }
-            }else{
-                if(right){
-                    if(left)
-                        return B_TREE_NODE_DIR_LR;
-                    else
-                        return B_TREE_NODE_DIR_R;
-                }else{
-                    if(left)
-                        return B_TREE_NODE_DIR_L;
-                    else
-                        return B_TREE_NODE_DIR_C;
-                }
-            }
-        }
-
         @Override
         public BNode deserialize(DataInput in, int available) throws IOException {
-            final int header = in.readUnsignedByte();
-            final int size = in.readUnsignedByte();
+            final int header = in.readUnsignedShort();
+            final int size = header & SIZE_MASK;
 
             //read node metas, right now this is ignored, but in future it could be used for counted btrees or aggregations
             for(int i=0;i<numberOfNodeMetas;i++){
@@ -427,15 +397,11 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
 
             //first bite indicates leaf
-            final boolean isLeaf =
-                    header == B_TREE_NODE_LEAF_C  || header == B_TREE_NODE_LEAF_L ||
-                    header == B_TREE_NODE_LEAF_LR || header == B_TREE_NODE_LEAF_R;
-            final int start =
-                (header==B_TREE_NODE_LEAF_L  || header == B_TREE_NODE_LEAF_LR || header==B_TREE_NODE_DIR_L  || header == B_TREE_NODE_DIR_LR) ?
+            final boolean isLeaf = ((header& LEAF_MASK) != 0);
+            final int start =((header& LEFT_MASK) != 0) ?
                 1:0;
 
-            final int end =
-                (header==B_TREE_NODE_LEAF_R  || header == B_TREE_NODE_LEAF_LR || header==B_TREE_NODE_DIR_R  || header == B_TREE_NODE_DIR_LR) ?
+            final int end = ((header& RIGHT_MASK) != 0) ?
                 size-1:size;
 
 
@@ -507,7 +473,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     int numberOfNodeMetas, boolean disableLocks) {
         if(maxNodeSize%2!=0) throw new IllegalArgumentException("maxNodeSize must be dividable by 2");
         if(maxNodeSize<6) throw new IllegalArgumentException("maxNodeSize too low");
-        if(maxNodeSize>126) throw new IllegalArgumentException("maxNodeSize too high");
+        if((maxNodeSize& SIZE_MASK) !=maxNodeSize) throw new IllegalArgumentException("maxNodeSize too high");
         if(rootRecidRef<=0||counterRecid<0 || numberOfNodeMetas<0) throw new IllegalArgumentException();
         if(keySerializer==null) throw new NullPointerException();
         if(comparator==null) throw new NullPointerException();
