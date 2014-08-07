@@ -298,6 +298,7 @@ public abstract class BTreeKeySerializer<K>{
         protected final Comparator<B> bComparator;
         protected final Serializer<A> aSerializer;
         protected final Serializer<B> bSerializer;
+        protected final Comparator<Fun.Tuple2<A, B>> comparator;
 
         /**
          * Construct new Tuple2 Key Serializer. You may pass null for some value,
@@ -313,6 +314,8 @@ public abstract class BTreeKeySerializer<K>{
             this.bComparator = bComparator;
             this.aSerializer = aSerializer;
             this.bSerializer = bSerializer;
+            
+            this.comparator = new Fun.Tuple2Comparator<A,B>(aComparator,bComparator);
         }
 
         /** used for deserialization, `extra` is to avoid argument collision */
@@ -322,6 +325,12 @@ public abstract class BTreeKeySerializer<K>{
             bComparator = (Comparator<B>) serializerBase.deserialize(is,objectStack);
             aSerializer = (Serializer<A>) serializerBase.deserialize(is,objectStack);
             bSerializer = (Serializer<B>) serializerBase.deserialize(is,objectStack);
+            comparator = new Fun.Tuple2Comparator<A,B>(aComparator,bComparator);
+        }
+
+        @Override
+        public Comparator<Fun.Tuple2<A,B>> getComparator() {
+            return comparator;
         }
 
         @Override
@@ -366,10 +375,6 @@ public abstract class BTreeKeySerializer<K>{
             return ret;
         }
 
-        @Override
-        public Comparator<Fun.Tuple2<A,B>> getComparator() {
-            return BTreeMap.COMPARABLE_COMPARATOR;
-        }
 
         @Override
         public boolean equals(Object o) {
@@ -422,6 +427,7 @@ public abstract class BTreeKeySerializer<K>{
         protected final Serializer<A> aSerializer;
         protected final Serializer<B> bSerializer;
         protected final Serializer<C> cSerializer;
+        protected final Comparator<Fun.Tuple3<A, B, C>> comparator;
 
         /**
          * Construct new Tuple3 Key Serializer. You may pass null for some value,
@@ -443,6 +449,7 @@ public abstract class BTreeKeySerializer<K>{
             this.aSerializer = aSerializer;
             this.bSerializer = bSerializer;
             this.cSerializer = cSerializer;
+            this.comparator = new Fun.Tuple3Comparator<A,B,C>(aComparator,bComparator,cComparator);
         }
 
         /** used for deserialization */
@@ -454,6 +461,12 @@ public abstract class BTreeKeySerializer<K>{
             aSerializer = (Serializer<A>) serializerBase.deserialize(is,objectStack);
             bSerializer = (Serializer<B>) serializerBase.deserialize(is,objectStack);
             cSerializer = (Serializer<C>) serializerBase.deserialize(is,objectStack);
+            this.comparator = new Fun.Tuple3Comparator<A,B,C>(aComparator,bComparator,cComparator);
+        }
+
+        @Override
+        public Comparator<Fun.Tuple3<A,B,C>> getComparator() {
+            return comparator;
         }
 
 
@@ -525,12 +538,6 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Comparator<Fun.Tuple3<A,B,C>> getComparator() {
-            return BTreeMap.COMPARABLE_COMPARATOR;
-        }
-
-
-        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -588,6 +595,8 @@ public abstract class BTreeKeySerializer<K>{
         protected final Serializer<C> cSerializer;
         protected final Serializer<D> dSerializer;
 
+        protected final Comparator<Fun.Tuple4<A, B, C, D>> comparator;
+
         /**
          * Construct new Tuple4 Key Serializer. You may pass null for some value,
          * In that case 'default' value will be used, Comparable comparator and Default Serializer from DB.
@@ -612,6 +621,7 @@ public abstract class BTreeKeySerializer<K>{
             this.bSerializer = bSerializer;
             this.cSerializer = cSerializer;
             this.dSerializer = dSerializer;
+            this.comparator = new Fun.Tuple4Comparator<A,B,C,D>(aComparator,bComparator,cComparator,dComparator);
         }
 
         /** used for deserialization */
@@ -625,6 +635,12 @@ public abstract class BTreeKeySerializer<K>{
             bSerializer = (Serializer<B>) serializerBase.deserialize(is,objectStack);
             cSerializer = (Serializer<C>) serializerBase.deserialize(is,objectStack);
             dSerializer = (Serializer<D>) serializerBase.deserialize(is,objectStack);
+            this.comparator = new Fun.Tuple4Comparator<A,B,C,D>(aComparator,bComparator,cComparator,dComparator);
+        }
+
+        @Override
+        public Comparator<Fun.Tuple4<A,B,C,D>> getComparator() {
+            return comparator;
         }
 
 
@@ -717,12 +733,6 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Comparator<Fun.Tuple4<A,B,C,D>> getComparator() {
-            return BTreeMap.COMPARABLE_COMPARATOR;
-        }
-
-
-        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -781,6 +791,8 @@ public abstract class BTreeKeySerializer<K>{
         protected final Serializer<D> dSerializer;
         protected final Serializer<E> eSerializer;
 
+        protected final Comparator<Fun.Tuple5<A, B, C, D, E>> comparator;
+
         /**
          * Construct new Tuple4 Key Serializer. You may pass null for some value,
          * In that case 'default' value will be used, Comparable comparator and Default Serializer from DB.
@@ -800,6 +812,7 @@ public abstract class BTreeKeySerializer<K>{
             this.cSerializer = cSerializer;
             this.dSerializer = dSerializer;
             this.eSerializer = eSerializer;
+            this.comparator = new Fun.Tuple5Comparator<A,B,C,D,E>(aComparator,bComparator,cComparator,dComparator,eComparator);
         }
 
         /** used for deserialization */
@@ -815,8 +828,13 @@ public abstract class BTreeKeySerializer<K>{
             cSerializer = (Serializer<C>) serializerBase.deserialize(is,objectStack);
             dSerializer = (Serializer<D>) serializerBase.deserialize(is,objectStack);
             eSerializer = (Serializer<E>) serializerBase.deserialize(is,objectStack);
+            this.comparator = new Fun.Tuple5Comparator<A,B,C,D,E>(aComparator,bComparator,cComparator,dComparator,eComparator);
         }
 
+        @Override
+        public Comparator<Fun.Tuple5<A,B,C,D,E>> getComparator() {
+            return comparator;
+        }
 
         @Override
         public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
@@ -928,10 +946,6 @@ public abstract class BTreeKeySerializer<K>{
             return ret;
         }
 
-        @Override
-        public Comparator<Fun.Tuple5<A,B,C,D,E>> getComparator() {
-            return BTreeMap.COMPARABLE_COMPARATOR;
-        }
 
 
         @Override
@@ -996,6 +1010,8 @@ public abstract class BTreeKeySerializer<K>{
         protected final Serializer<E> eSerializer;
         protected final Serializer<F> fSerializer;
 
+        protected final Comparator<Fun.Tuple6<A, B, C, D, E, F>> comparator;
+
         /**
          * Construct new Tuple4 Key Serializer. You may pass null for some value,
          * In that case 'default' value will be used, Comparable comparator and Default Serializer from DB.
@@ -1017,6 +1033,7 @@ public abstract class BTreeKeySerializer<K>{
             this.dSerializer = dSerializer;
             this.eSerializer = eSerializer;
             this.fSerializer = fSerializer;
+            this.comparator = new Fun.Tuple6Comparator<A,B,C,D,E,F>(aComparator,bComparator,cComparator,dComparator,eComparator,fComparator);
         }
 
         /** used for deserialization */
@@ -1034,6 +1051,13 @@ public abstract class BTreeKeySerializer<K>{
             dSerializer = (Serializer<D>) serializerBase.deserialize(is,objectStack);
             eSerializer = (Serializer<E>) serializerBase.deserialize(is,objectStack);
             fSerializer = (Serializer<F>) serializerBase.deserialize(is,objectStack);
+
+            this.comparator = new Fun.Tuple6Comparator<A,B,C,D,E,F>(aComparator,bComparator,cComparator,dComparator,eComparator,fComparator);
+        }
+
+        @Override
+        public Comparator<Fun.Tuple6<A,B,C,D,E,F>> getComparator() {
+            return comparator;
         }
 
 
@@ -1169,11 +1193,6 @@ public abstract class BTreeKeySerializer<K>{
             assert(ecount==0);
 
             return ret;
-        }
-
-        @Override
-        public Comparator<Fun.Tuple6<A,B,C,D,E,F>> getComparator() {
-            return BTreeMap.COMPARABLE_COMPARATOR;
         }
 
 

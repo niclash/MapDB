@@ -889,8 +889,8 @@ public class DB implements Closeable {
             BTreeKeySerializer.Tuple2KeySerializer<?,?> s =
                     (BTreeKeySerializer.Tuple2KeySerializer<?,?>) keySerializer;
             return new BTreeKeySerializer.Tuple2KeySerializer(
-                    s.aComparator!=null?s.aComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.aComparator!=null?s.aComparator:Fun.COMPARATOR,
+                    s.bComparator!=null?s.bComparator:Fun.COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer()
             );
@@ -899,9 +899,9 @@ public class DB implements Closeable {
             BTreeKeySerializer.Tuple3KeySerializer<?,?,?> s =
                     (BTreeKeySerializer.Tuple3KeySerializer<?,?,?>) keySerializer;
             return new BTreeKeySerializer.Tuple3KeySerializer(
-                    s.aComparator!=null?s.aComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.cComparator!=null?s.cComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.aComparator!=null?s.aComparator:Fun.COMPARATOR,
+                    s.bComparator!=null?s.bComparator:Fun.COMPARATOR,
+                    s.cComparator!=null?s.cComparator:Fun.COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer(),
                     s.cSerializer!=null?s.cSerializer:getDefaultSerializer()
@@ -911,10 +911,10 @@ public class DB implements Closeable {
             BTreeKeySerializer.Tuple4KeySerializer<?,?,?,?> s =
                     (BTreeKeySerializer.Tuple4KeySerializer<?,?,?,?>) keySerializer;
             return new BTreeKeySerializer.Tuple4KeySerializer(
-                    s.aComparator!=null?s.aComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.cComparator!=null?s.cComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.dComparator!=null?s.dComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.aComparator!=null?s.aComparator:Fun.COMPARATOR,
+                    s.bComparator!=null?s.bComparator:Fun.COMPARATOR,
+                    s.cComparator!=null?s.cComparator:Fun.COMPARATOR,
+                    s.dComparator!=null?s.dComparator:Fun.COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer(),
                     s.cSerializer!=null?s.cSerializer:getDefaultSerializer(),
@@ -926,11 +926,11 @@ public class DB implements Closeable {
             BTreeKeySerializer.Tuple5KeySerializer<?,?,?,?,?> s =
                     (BTreeKeySerializer.Tuple5KeySerializer<?,?,?,?,?>) keySerializer;
             return new BTreeKeySerializer.Tuple5KeySerializer(
-                    s.aComparator!=null?s.aComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.cComparator!=null?s.cComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.dComparator!=null?s.dComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.eComparator!=null?s.eComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.aComparator!=null?s.aComparator:Fun.COMPARATOR,
+                    s.bComparator!=null?s.bComparator:Fun.COMPARATOR,
+                    s.cComparator!=null?s.cComparator:Fun.COMPARATOR,
+                    s.dComparator!=null?s.dComparator:Fun.COMPARATOR,
+                    s.eComparator!=null?s.eComparator:Fun.COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer(),
                     s.cSerializer!=null?s.cSerializer:getDefaultSerializer(),
@@ -943,12 +943,12 @@ public class DB implements Closeable {
             BTreeKeySerializer.Tuple6KeySerializer<?,?,?,?,?,?> s =
                     (BTreeKeySerializer.Tuple6KeySerializer<?,?,?,?,?,?>) keySerializer;
             return new BTreeKeySerializer.Tuple6KeySerializer(
-                    s.aComparator!=null?s.aComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.cComparator!=null?s.cComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.dComparator!=null?s.dComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.eComparator!=null?s.eComparator:BTreeMap.COMPARABLE_COMPARATOR,
-                    s.fComparator!=null?s.fComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.aComparator!=null?s.aComparator:Fun.COMPARATOR,
+                    s.bComparator!=null?s.bComparator:Fun.COMPARATOR,
+                    s.cComparator!=null?s.cComparator:Fun.COMPARATOR,
+                    s.dComparator!=null?s.dComparator:Fun.COMPARATOR,
+                    s.eComparator!=null?s.eComparator:Fun.COMPARATOR,
+                    s.fComparator!=null?s.fComparator:Fun.COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer(),
                     s.cSerializer!=null?s.cSerializer:getDefaultSerializer(),
