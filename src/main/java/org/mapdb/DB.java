@@ -890,6 +890,7 @@ public class DB implements Closeable {
                     (BTreeKeySerializer.Tuple2KeySerializer<?,?>) keySerializer;
             return new BTreeKeySerializer.Tuple2KeySerializer(
                     s.aComparator!=null?s.aComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer()
             );
@@ -900,6 +901,7 @@ public class DB implements Closeable {
             return new BTreeKeySerializer.Tuple3KeySerializer(
                     s.aComparator!=null?s.aComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.cComparator!=null?s.cComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer(),
                     s.cSerializer!=null?s.cSerializer:getDefaultSerializer()
@@ -912,6 +914,7 @@ public class DB implements Closeable {
                     s.aComparator!=null?s.aComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.cComparator!=null?s.cComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.dComparator!=null?s.dComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer(),
                     s.cSerializer!=null?s.cSerializer:getDefaultSerializer(),
@@ -927,6 +930,7 @@ public class DB implements Closeable {
                     s.bComparator!=null?s.bComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.cComparator!=null?s.cComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.dComparator!=null?s.dComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.eComparator!=null?s.eComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer(),
                     s.cSerializer!=null?s.cSerializer:getDefaultSerializer(),
@@ -944,6 +948,7 @@ public class DB implements Closeable {
                     s.cComparator!=null?s.cComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.dComparator!=null?s.dComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.eComparator!=null?s.eComparator:BTreeMap.COMPARABLE_COMPARATOR,
+                    s.fComparator!=null?s.fComparator:BTreeMap.COMPARABLE_COMPARATOR,
                     s.aSerializer!=null?s.aSerializer:getDefaultSerializer(),
                     s.bSerializer!=null?s.bSerializer:getDefaultSerializer(),
                     s.cSerializer!=null?s.cSerializer:getDefaultSerializer(),
