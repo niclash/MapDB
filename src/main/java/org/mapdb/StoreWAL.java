@@ -758,7 +758,7 @@ public class StoreWAL extends StoreDirect {
             }else
                 indexVal = indexVals[offset / 8];
 
-            ret |=  indexVal | LongHashMap.longHash(indexVal|offset) ;
+            ret +=  indexVal + LongHashMap.longHash(indexVal+offset) ;
         }
 
         return ret;
