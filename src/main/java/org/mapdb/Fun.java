@@ -52,6 +52,15 @@ public final class Fun {
     };
 
 
+    @SuppressWarnings("rawtypes")
+    public static final Comparator COMPARATOR_NON_NULL = new Comparator<Comparable>() {
+        @Override
+        final public int compare(final Comparable o1, final Comparable o2) {
+            return o1.compareTo(o2);
+        }
+    };
+
+
     /** empty iterator (note: Collections.EMPTY_ITERATOR is Java 7 specific and should not be used)*/
     public static final Iterator EMPTY_ITERATOR = new ArrayList(0).iterator();
 
@@ -61,7 +70,6 @@ public final class Fun {
     public static final Comparator<Tuple4> TUPLE4_COMPARATOR = new Tuple4Comparator(null,null,null,null);
     public static final Comparator<Tuple5> TUPLE5_COMPARATOR = new Tuple5Comparator(null,null,null,null,null);
     public static final Comparator<Tuple6> TUPLE6_COMPARATOR = new Tuple6Comparator(null,null,null,null,null,null);
-
 
     private Fun(){}
 

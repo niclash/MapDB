@@ -129,7 +129,7 @@ public abstract class BTreeKeySerializer<K>{
 
         @Override
         public Comparator<Long> getComparator() {
-            return BTreeMap.COMPARABLE_COMPARATOR;
+            return Fun.COMPARATOR_NON_NULL;
         }
     };
 
@@ -164,7 +164,7 @@ public abstract class BTreeKeySerializer<K>{
 
         @Override
         public Comparator<Integer> getComparator() {
-            return BTreeMap.COMPARABLE_COMPARATOR;
+            return Fun.COMPARATOR_NON_NULL;
         }
 
     };
@@ -203,7 +203,7 @@ public abstract class BTreeKeySerializer<K>{
 
         @Override
         public Comparator<String> getComparator() {
-            return BTreeMap.COMPARABLE_COMPARATOR;
+            return Fun.COMPARATOR_NON_NULL;
         }
 
     };

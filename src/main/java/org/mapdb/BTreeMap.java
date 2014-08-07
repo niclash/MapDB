@@ -98,14 +98,6 @@ import java.util.concurrent.locks.LockSupport;
 public class BTreeMap<K,V> extends AbstractMap<K,V>
         implements ConcurrentNavigableMap<K,V>, Bind.MapWithModificationListener<K,V>, Closeable {
 
-    @SuppressWarnings("rawtypes")
-    public static final Comparator COMPARABLE_COMPARATOR = new Comparator<Comparable>() {
-        @Override
-        final public int compare(final Comparable o1, final Comparable o2) {
-            return o1.compareTo(o2);
-        }
-    };
-
 
     protected static final Object EMPTY = new Object();
 
@@ -168,7 +160,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 return Collections.unmodifiableSortedMap(new TreeMap<String, Object>());
 
             NodeSerializer rootSerializer = new NodeSerializer(false,BTreeKeySerializer.STRING,
-                    db.getDefaultSerializer(),COMPARABLE_COMPARATOR, 0);
+                    db.getDefaultSerializer(), Fun.COMPARATOR_NON_NULL, 0);
             BNode root = new LeafNode(new Object[]{null, null}, new Object[]{}, 0);
             rootRef = db.getEngine().put(root, rootSerializer);
             db.getEngine().update(Engine.CATALOG_RECID,rootRef, Serializer.LONG);
@@ -177,7 +169,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         return new BTreeMap<String, Object>(db.engine,Engine.CATALOG_RECID,32,false,0,
                 BTreeKeySerializer.STRING,
                 db.getDefaultSerializer(),
-                COMPARABLE_COMPARATOR,0, false);
+                Fun.COMPARATOR_NON_NULL,0, false);
     }
 
 

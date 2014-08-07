@@ -1358,7 +1358,7 @@ public class SerializerBase implements Serializer<Object>{
         int SERIALIZER_KEY_TUPLE3 = 8;
         int SERIALIZER_KEY_TUPLE4 = 9;
         int FUN_COMPARATOR = 10;
-        int COMPARABLE_COMPARATOR = 11;
+        int COMPARATOR_NON_NULL = 11;
         int THIS_SERIALIZER = 12;
         int SERIALIZER_BASIC = 13;
         int SERIALIZER_STRING_NOSIZE = 14;
@@ -1425,7 +1425,7 @@ public class SerializerBase implements Serializer<Object>{
             all.put(BTreeKeySerializer.ZERO_OR_POSITIVE_LONG, HeaderMapDB.B_TREE_SERIALIZER_POS_LONG);
             all.put(BTreeKeySerializer.ZERO_OR_POSITIVE_INT, HeaderMapDB.B_TREE_SERIALIZER_POS_INT);
 
-            all.put(BTreeMap.COMPARABLE_COMPARATOR,HeaderMapDB.COMPARABLE_COMPARATOR);
+            all.put(Fun.COMPARATOR_NON_NULL,HeaderMapDB.COMPARATOR_NON_NULL);
             all.put(Fun.COMPARATOR,HeaderMapDB.FUN_COMPARATOR);
             all.put(Fun.REVERSE_COMPARATOR,HeaderMapDB.FUN_COMPARATOR_REVERSE);
             all.put(Fun.EMPTY_ITERATOR,HeaderMapDB.FUN_EMPTY_ITERATOR);

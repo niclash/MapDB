@@ -63,7 +63,7 @@ public class Huge_Insert {
          */
         source = Pump.sort(source,
                 true, 100000,
-                Collections.reverseOrder(BTreeMap.COMPARABLE_COMPARATOR), //reverse  order comparator
+                Collections.reverseOrder(Fun.COMPARATOR_NON_NULL), //reverse  order comparator
                 db.getDefaultSerializer()
                 );
 

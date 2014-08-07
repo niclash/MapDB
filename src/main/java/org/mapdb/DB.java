@@ -793,7 +793,7 @@ public class DB implements Closeable {
                 catGet(name+".counterRecid",0L),
                 (BTreeKeySerializer)catGet(name+".keySerializer",new BTreeKeySerializer.BasicKeySerializer(getDefaultSerializer())),
                 catGet(name+".valueSerializer",getDefaultSerializer()),
-                catGet(name+".comparator",BTreeMap.COMPARABLE_COMPARATOR),
+                catGet(name+".comparator", Fun.COMPARATOR_NON_NULL),
                 catGet(name+".numberOfNodeMetas",0),
                 false
                 );
@@ -822,7 +822,7 @@ public class DB implements Closeable {
         if(m.comparator==null){
             m.comparator = m.keySerializer.getComparator();
             if(m.comparator==null){
-                m.comparator = BTreeMap.COMPARABLE_COMPARATOR;
+                m.comparator = Fun.COMPARATOR_NON_NULL;
             }
         }
 
@@ -1007,7 +1007,7 @@ public class DB implements Closeable {
                 catGet(name+".counterRecid",0L),
                 (BTreeKeySerializer) catGet(name+".keySerializer",new BTreeKeySerializer.BasicKeySerializer(getDefaultSerializer())),
                 null,
-                catGet(name+".comparator",BTreeMap.COMPARABLE_COMPARATOR),
+                catGet(name+".comparator", Fun.COMPARATOR_NON_NULL),
                 catGet(name+".numberOfNodeMetas",0),
                 false
         ).keySet();
@@ -1034,7 +1034,7 @@ public class DB implements Closeable {
         if(m.comparator==null){
             m.comparator = m.serializer.getComparator();
             if(m.comparator==null){
-                m.comparator = BTreeMap.COMPARABLE_COMPARATOR;
+                m.comparator = Fun.COMPARATOR_NON_NULL;
             }
         }
         m.comparator = catPut(m.name+".comparator",m.comparator);
