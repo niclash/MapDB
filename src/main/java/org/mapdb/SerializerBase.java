@@ -420,6 +420,7 @@ public class SerializerBase implements Serializer<Object>{
             DataIO.packInt(out, HeaderMapDB.SERIALIZER_KEY_TUPLE2);
             BTreeKeySerializer.Tuple2KeySerializer s = (BTreeKeySerializer.Tuple2KeySerializer) obj;
             serialize(out, s.aComparator,objectStack);
+            serialize(out, s.bComparator,objectStack);
             serialize(out, s.aSerializer,objectStack);
             serialize(out, s.bSerializer,objectStack);
         } else if (clazz == BTreeKeySerializer.Tuple3KeySerializer.class){
@@ -428,6 +429,7 @@ public class SerializerBase implements Serializer<Object>{
             BTreeKeySerializer.Tuple3KeySerializer s = (BTreeKeySerializer.Tuple3KeySerializer) obj;
             serialize(out, s.aComparator,objectStack);
             serialize(out, s.bComparator,objectStack);
+            serialize(out, s.cComparator,objectStack);
             serialize(out, s.aSerializer, objectStack);
             serialize(out, s.bSerializer, objectStack);
             serialize(out, s.cSerializer,objectStack);
@@ -438,6 +440,7 @@ public class SerializerBase implements Serializer<Object>{
             serialize(out, s.aComparator,objectStack);
             serialize(out, s.bComparator,objectStack);
             serialize(out, s.cComparator,objectStack);
+            serialize(out, s.dComparator,objectStack);
             serialize(out, s.aSerializer,objectStack);
             serialize(out, s.bSerializer, objectStack);
             serialize(out, s.cSerializer, objectStack);
@@ -450,6 +453,7 @@ public class SerializerBase implements Serializer<Object>{
             serialize(out, s.bComparator,objectStack);
             serialize(out, s.cComparator,objectStack);
             serialize(out, s.dComparator,objectStack);
+            serialize(out, s.eComparator,objectStack);
             serialize(out, s.aSerializer,objectStack);
             serialize(out, s.bSerializer, objectStack);
             serialize(out, s.cSerializer, objectStack);
@@ -464,6 +468,7 @@ public class SerializerBase implements Serializer<Object>{
             serialize(out, s.cComparator,objectStack);
             serialize(out, s.dComparator,objectStack);
             serialize(out, s.eComparator,objectStack);
+            serialize(out, s.fComparator,objectStack);
             serialize(out, s.aSerializer,objectStack);
             serialize(out, s.bSerializer,objectStack);
             serialize(out, s.cSerializer, objectStack);
