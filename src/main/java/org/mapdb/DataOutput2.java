@@ -31,17 +31,16 @@ import java.util.Arrays;
 public final class DataOutput2 extends OutputStream implements DataOutput {
 
     public byte[] buf;
-    volatile public int pos;
+    public int pos;
+    public int sizeMask;
+
 
     public DataOutput2(){
         pos = 0;
         buf = new byte[16]; //TODO take hint from serializer for initial size
+        sizeMask = 0xFFFFFFFF-(buf.length-1);
     }
 
-    public DataOutput2(byte[] buf){
-        pos=0;
-        this.buf = buf;
-    }
 
     public byte[] copyBytes(){
         return Arrays.copyOf(buf, pos);
@@ -50,11 +49,27 @@ public final class DataOutput2 extends OutputStream implements DataOutput {
     /**
      * make sure there will be enough space in buffer to write N bytes
      */
-    public void ensureAvail(final int n) {
-        if (pos + n >= buf.length) {
-            int newSize = Math.max(pos + n, buf.length * 2);
+    public void ensureAvail(int n) {
+
+        n+=pos;
+        if ((n&sizeMask)!=0) {
+            int newSize = buf.length;
+            while(newSize<n){
+                newSize<<=2;
+                sizeMask<<=2;
+            }
             buf = Arrays.copyOf(buf, newSize);
         }
+    }
+
+    public static int nextPowTwo(final int a)
+    {
+        int b = 1;
+        while (b < a)
+        {
+            b = b << 1;
+        }
+        return b;
     }
 
 
@@ -142,10 +157,10 @@ public final class DataOutput2 extends OutputStream implements DataOutput {
     @Override
     public void writeUTF(final String s) throws IOException {
         final int len = s.length();
-        DataOutput2.packInt(this, len);
+        packInt(len);
         for (int i = 0; i < len; i++) {
             int c = (int) s.charAt(i);
-            DataOutput2.packInt(this, c);
+            packInt(c);
         }
     }
 
@@ -192,8 +207,8 @@ public final class DataOutput2 extends OutputStream implements DataOutput {
      *
      */
     static public void packLong(DataOutput out, long value) throws IOException {
-
-        assert(value>=0):"negative value: "+value;
+        if(CC.PARANOID && value<0)
+            throw new AssertionError("negative value: "+value);
 
         while ((value & ~0x7FL) != 0) {
             out.write((((int) value & 0x7F) | 0x80));
@@ -219,7 +234,8 @@ public final class DataOutput2 extends OutputStream implements DataOutput {
      */
 
     static public void packInt(DataOutput in, int value) throws IOException {
-        assert(value>=0):"negative value: "+value;
+        if(CC.PARANOID && value<0)
+            throw new AssertionError("negative value: "+value);
 
         while ((value & ~0x7F) != 0) {
             in.write(((value & 0x7F) | 0x80));
@@ -228,4 +244,20 @@ public final class DataOutput2 extends OutputStream implements DataOutput {
 
         in.write((byte) value);
     }
+
+
+
+    protected void packInt(int value) throws IOException {
+        if(CC.PARANOID && value<0)
+            throw new AssertionError("negative value: "+value);
+
+        while ((value & ~0x7F) != 0) {
+            ensureAvail(1);
+            buf[pos++]= (byte) ((value & 0x7F) | 0x80);
+            value >>>= 7;
+        }
+        ensureAvail(1);
+        buf[pos++]= (byte) value;
+    }
+
 }
