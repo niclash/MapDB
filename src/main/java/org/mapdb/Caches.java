@@ -351,7 +351,7 @@ public final class Caches {
         }
 
         private int position(long recid) {
-            return LongHashMap.longHash(recid^hashSalt)&cacheMaxSizeMask;
+            return DataIO.longHash(recid ^ hashSalt)&cacheMaxSizeMask;
         }
 
         @Override
