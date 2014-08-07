@@ -740,7 +740,7 @@ public final class Fun {
                     return 1;
                 return -1;
             }
-            return intCompare(o1.length, o2.length);
+            return compareInt(o1.length, o2.length);
         }
     };
 
@@ -757,7 +757,7 @@ public final class Fun {
                     return 1;
                 return -1;
             }
-            return intCompare(o1.length, o2.length);
+            return compareInt(o1.length, o2.length);
         }
     };
 
@@ -773,7 +773,7 @@ public final class Fun {
                     return 1;
                 return -1;
             }
-            return intCompare(o1.length, o2.length);
+            return compareInt(o1.length, o2.length);
         }
     };
 
@@ -789,7 +789,7 @@ public final class Fun {
                     return 1;
                 return -1;
             }
-            return intCompare(o1.length, o2.length);
+            return compareInt(o1.length, o2.length);
         }
     };
 
@@ -805,7 +805,7 @@ public final class Fun {
                     return 1;
                 return -1;
             }
-            return intCompare(o1.length, o2.length);
+            return compareInt(o1.length, o2.length);
         }
     };
 
@@ -821,7 +821,7 @@ public final class Fun {
                 if(r!=0)
                     return r;
             }
-            return intCompare(o1.length, o2.length);
+            return compareInt(o1.length, o2.length);
         }
     };
 
@@ -853,7 +853,7 @@ public final class Fun {
                 if(r!=0)
                     return r;
             }
-            return intCompare(o1.length, o2.length);
+            return compareInt(o1.length, o2.length);
         }
 
         @Override
@@ -871,10 +871,13 @@ public final class Fun {
         }
     }
 
-    private static int intCompare(int x, int y) {
+    public static int compareInt(int x, int y) {
         return (x < y) ? -1 : ((x == y) ? 0 : 1);
     }
 
+    public static int compareLong(long x, long y) {
+        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+    }
 
     /**
      * Find all Primary Keys associated with Secondary Key.

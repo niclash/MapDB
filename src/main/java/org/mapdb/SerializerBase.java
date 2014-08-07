@@ -478,7 +478,8 @@ public class SerializerBase implements Serializer<Object>{
         }else if(clazz == BTreeKeySerializer.BasicKeySerializer.class){
             out.write(Header.MAPDB);
             DataIO.packInt(out, HeaderMapDB.B_TREE_BASIC_KEY_SERIALIZER);
-            serialize(out,((BTreeKeySerializer.BasicKeySerializer)obj).defaultSerializer,objectStack);
+            serialize(out,((BTreeKeySerializer.BasicKeySerializer)obj).serializer,objectStack);
+            serialize(out,((BTreeKeySerializer.BasicKeySerializer)obj).comparator,objectStack);
         } else if (clazz == Fun.ArrayComparator.class){
             out.write(Header.MAPDB);
             DataIO.packInt(out, HeaderMapDB.COMPARATOR_ARRAY);

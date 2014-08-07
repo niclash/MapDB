@@ -15,85 +15,94 @@ import java.util.Comparator;
  *
  * @param <K> type of key
  */
-public abstract class BTreeKeySerializer<K>{
+public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
+
+    public KEY2 preDigestKey(KEY key){
+        return (KEY2) key;
+    }
 
     /**
      * Serialize keys from single BTree Node.
      *
      * @param out output stream where to put ata
-     * @param start where data start in array. Before this index all keys are null
-     * @param end where data ends in array (exclusive). From this index all keys are null
-     * @param keys array of keys for single BTree Node
+     * @param keys An object which represents keys
      *
      * @throws IOException
      */
-    public abstract void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException;
+    public abstract void serialize(DataOutput out, KEYS keys) throws IOException;
 
     /**
      * Deserializes keys for single BTree Node. To
      *
      * @param in input stream to read data from
-     * @param start where data start in array. Before this index all keys are null
-     * @param end where data ends in array (exclusive). From this index all keys are null
-     * @param size size of array which should be returned
-     * @return array of keys for single BTree Node
+     * @return an object which represents keys
      *
      * @throws IOException
      */
-    public abstract Object[] deserialize(DataInput in, int start, int end, int size) throws IOException;
+    public abstract KEYS deserialize(DataInput in, int nodeSize) throws IOException;
 
 
+    public abstract int compare(KEYS keys, int pos1, int pos2);
 
-    /**
-     * Some key serializers  may only work with they own comparators.
-     * For example delta-packing stores increments between numbers and requires ascending order.
-     * So Key Serializer may provide its own comparator.
-     *
-     * @return comparator which must be used with this method. `null` if comparator is not strictly required.
-     */
-    public abstract Comparator<K> getComparator();
 
-    public static final BTreeKeySerializer BASIC = new BTreeKeySerializer.BasicKeySerializer(Serializer.BASIC);
+    public abstract int compare(KEYS keys, int pos, KEY2 preDigestedKey);
+
+    public abstract KEY getKey(KEYS keys, int pos);
+
+    public static final BTreeKeySerializer BASIC = new BTreeKeySerializer.BasicKeySerializer(Serializer.BASIC, Fun.COMPARATOR_NON_NULL);
 
     /**
      * Basic Key Serializer which just writes data without applying any compression.
      * Is used by default if no other Key Serializer is specified.
      */
-    public static final class BasicKeySerializer extends BTreeKeySerializer<Object> implements Serializable {
+    public static final class BasicKeySerializer extends BTreeKeySerializer<Object,Object, Object[]> implements Serializable {
 
         private static final long serialVersionUID = 1654710710946309279L;
 
-        protected final Serializer defaultSerializer;
+        protected final Serializer serializer;
+        protected final Comparator comparator;
 
-        public BasicKeySerializer(Serializer defaultSerializer) {
-            this.defaultSerializer = defaultSerializer;
+        public BasicKeySerializer(Serializer serializer, Comparator comparator) {
+            this.serializer = serializer;
+            this.comparator = comparator;
         }
 
         /** used for deserialization*/
-        protected BasicKeySerializer(SerializerBase serializerBase, DataInput is, SerializerBase.FastArrayList<Object> objectStack) throws IOException {
+        BasicKeySerializer(SerializerBase serializerBase, DataInput is, SerializerBase.FastArrayList<Object> objectStack) throws IOException {
             objectStack.add(this);
-            defaultSerializer = (Serializer) serializerBase.deserialize(is,objectStack);
+            serializer = (Serializer) serializerBase.deserialize(is,objectStack);
+            comparator = (Comparator) serializerBase.deserialize(is,objectStack);
         }
 
         @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
-            for(int i = start;i<end;i++){
-                defaultSerializer.serialize(out,keys[i]);
+        public void serialize(DataOutput out, Object[] keys) throws IOException {
+            for(Object o:keys){
+                serializer.serialize(out, o);
             }
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException{
-            Object[] ret = new Object[size];
-            for(int i=start; i<end; i++){
-                ret[i] = defaultSerializer.deserialize(in,-1);
-            }
-            return ret;
+        public Object[] deserialize(DataInput in, int nodeSize) throws IOException {
+            Object[] keys = new Object[nodeSize];
+            for(int i=0;i<keys.length;i++)
+                keys[i] = serializer.deserialize(in,-1);
+            return keys;
         }
 
         @Override
-        public Comparator<Object> getComparator() {
-            return null;
+        public int compare(Object[] keys, int pos1, int pos2) {
+            return comparator.compare(keys[pos1], keys[pos2]);
+
+        }
+
+        @Override
+        public int compare(Object[] keys, int pos, Object preDigestedKey) {
+            return comparator.compare(keys[pos],preDigestedKey);
+        }
+
+        @Override
+        public Object getKey(Object[] keys, int pos) {
+            return keys[pos];
         }
     }
 
@@ -103,33 +112,43 @@ public abstract class BTreeKeySerializer<K>{
      * Difference between consequential numbers is also packed itself, so for small diffs it takes only single byte per
      * number.
      */
-    public static final  BTreeKeySerializer<Long> ZERO_OR_POSITIVE_LONG = new BTreeKeySerializer<Long>() {
+    public static final  BTreeKeySerializer ZERO_OR_POSITIVE_LONG = new BTreeKeySerializer<Long,Long,long[]>() {
+
         @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
-            if(start>=end) return;
-            long prev = (Long)keys[start];
+        public void serialize(DataOutput out, long[] keys) throws IOException {
+            long prev = keys[0];
             DataIO.packLong(out, prev);
-            for(int i=start+1;i<end;i++){
-                long curr = (Long)keys[i];
+            for(int i=1;i<keys.length;i++){
+                long curr = keys[i];
                 DataIO.packLong(out, curr - prev);
                 prev = curr;
             }
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
-            Object[] ret = new Long[size];
+        public long[] deserialize(DataInput in, int nodeSize) throws IOException {
+            long[] ret = new long[nodeSize];
             long prev = 0 ;
-            for(int i = start; i<end; i++){
+            for(int i = 0; i<nodeSize; i++){
                 prev += DataIO.unpackLong(in);
-                ret[i] = new Long(prev);
+                ret[i] = prev;
             }
             return ret;
         }
 
         @Override
-        public Comparator<Long> getComparator() {
-            return Fun.COMPARATOR_NON_NULL;
+        public int compare(long[] keys, int pos1, int pos2) {
+            return Fun.compareLong(keys[pos1], keys[pos2]);
+        }
+
+        @Override
+        public int compare(long[] keys, int pos, Long preDigestedKey) {
+            return Fun.compareLong(keys[pos], preDigestedKey);
+        }
+
+        @Override
+        public Long getKey(long[] keys, int pos) {
+            return new Long(keys[pos]);
         }
     };
 
@@ -138,74 +157,138 @@ public abstract class BTreeKeySerializer<K>{
      * Difference between consequential numbers is also packed itself, so for small diffs it takes only single byte per
      * number.
      */
-    public static final  BTreeKeySerializer<Integer> ZERO_OR_POSITIVE_INT = new BTreeKeySerializer<Integer>() {
+    public static final  BTreeKeySerializer ZERO_OR_POSITIVE_INT = new BTreeKeySerializer<Integer,Integer,int[]>() {
         @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
-            if(start>=end) return;
-            int prev = (Integer)keys[start];
-            DataIO.packLong(out, prev);
-            for(int i=start+1;i<end;i++){
-                int curr = (Integer)keys[i];
+        public void serialize(DataOutput out, int[] keys) throws IOException {
+            int prev = keys[0];
+            DataIO.packInt(out, prev);
+            for(int i=1;i<keys.length;i++){
+                int curr = keys[i];
                 DataIO.packInt(out, curr - prev);
                 prev = curr;
             }
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
-            Object[] ret = new Integer[size];
+        public int[] deserialize(DataInput in, int nodeSize) throws IOException {
+            int[] ret = new int[nodeSize];
             int prev = 0 ;
-            for(int i = start; i<end; i++){
-                prev +=  DataIO.unpackInt(in);
-                ret[i] = new Integer(prev);
+            for(int i = 0; i<nodeSize; i++){
+                prev += DataIO.unpackInt(in);
+                ret[i] = prev;
             }
             return ret;
         }
 
         @Override
-        public Comparator<Integer> getComparator() {
-            return Fun.COMPARATOR_NON_NULL;
+        public int compare(int[] keys, int pos1, int pos2) {
+            return Fun.compareInt(keys[pos1], keys[pos2]);
         }
 
+        @Override
+        public int compare(int[] keys, int pos, Integer preDigestedKey) {
+            return Fun.compareInt(keys[pos], preDigestedKey);
+        }
+
+        @Override
+        public Integer getKey(int[] keys, int pos) {
+            return new Integer(keys[pos]);
+        }
     };
 
+
+    protected final static class StringKeys{
+        final int[] offsets;
+        final char[] chars;
+
+        StringKeys(int[] offsets, char[] chars) {
+            this.offsets = offsets;
+            this.chars = chars;
+        }
+    }
 
     /**
      * Applies delta packing on {@code java.lang.String}. This serializer splits consequent strings
      * to two parts: shared prefix and different suffix. Only suffix is than stored.
      */
-    public static final  BTreeKeySerializer<String> STRING = new BTreeKeySerializer<String>() {
+    public static final  BTreeKeySerializer STRING = new BTreeKeySerializer<String,char[], StringKeys>() {
 
         private final Charset UTF8_CHARSET = Charset.forName("UTF8");
 
+//        @Override
+//        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
+//            byte[] previous = null;
+//            for (int i = start; i < end; i++) {
+//                byte[] b = ((String) keys[i]).getBytes(UTF8_CHARSET);
+//                leadingValuePackWrite(out, b, previous, 0);
+//                previous = b;
+//            }
+//        }
+//
+//        @Override
+//        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
+//            Object[] ret = new Object[size];
+//            byte[] previous = null;
+//            for (int i = start; i < end; i++) {
+//                byte[] b = leadingValuePackRead(in, previous, 0);
+//                if (b == null) continue;
+//                ret[i] = new String(b,UTF8_CHARSET);
+//                previous = b;
+//            }
+//            return ret;
+//        }
+
+
         @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
-            byte[] previous = null;
-            for (int i = start; i < end; i++) {
-                byte[] b = ((String) keys[i]).getBytes(UTF8_CHARSET);
-                leadingValuePackWrite(out, b, previous, 0);
-                previous = b;
-            }
+        public char[] preDigestKey(String s) {
+            return s.toCharArray();
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
-            Object[] ret = new Object[size];
-            byte[] previous = null;
-            for (int i = start; i < end; i++) {
-                byte[] b = leadingValuePackRead(in, previous, 0);
-                if (b == null) continue;
-                ret[i] = new String(b,UTF8_CHARSET);
-                previous = b;
-            }
-            return ret;
+        public void serialize(DataOutput out, StringKeys keys) throws IOException {
+            ZERO_OR_POSITIVE_INT.serialize(out,keys.offsets);
+            for(char c:keys.chars)
+                DataIO.packInt(out,c);
         }
 
         @Override
-        public Comparator<String> getComparator() {
-            return Fun.COMPARATOR_NON_NULL;
+        public StringKeys deserialize(DataInput in, int nodeSize) throws IOException {
+            int[] offsets = (int[]) ZERO_OR_POSITIVE_INT.deserialize(in,nodeSize);
+            int charLen = offsets[offsets.length-1];
+            char[] chars = new char[charLen];
+            for(int i=0;i<charLen;i++)
+                chars[i] = (char) DataIO.unpackInt(in); //TODO native char packing?
+            return new StringKeys(offsets,chars);
         }
 
+        @Override
+        public int compare(StringKeys keys, int pos1, int pos2) {
+            int start1 = pos1==0 ? 0 : keys.offsets[pos1-1];
+            int end1 = keys.offsets[pos1];
+            int start2 = pos2==0 ? 0 : keys.offsets[pos2-1];
+            int end2 = keys.offsets[pos2];
+
+            String s1 = String.valueOf(keys.chars,start1, end1-start1);
+            String s2 = String.valueOf(keys.chars,start2, end1-start2);
+            return s1.compareTo(s2); //TODO optimize
+        }
+
+        @Override
+        public int compare(StringKeys keys, int pos, char[] preDigestedKey) {
+            int start1 = pos==0 ? 0 : keys.offsets[pos-1];
+            int end1 = keys.offsets[pos];
+
+            String s1 = String.valueOf(keys.chars,start1, end1-start1);
+            String s2 = String.valueOf(preDigestedKey);
+            return s1.compareTo(s2); //TODO optimize
+        }
+
+        @Override
+        public String getKey(StringKeys keys, int pos) {
+            int start1 = pos==0 ? 0 : keys.offsets[pos-1];
+            int end1 = keys.offsets[pos];
+            return String.valueOf(keys.chars,start1, end1-start1);
+        }
     };
 
     /**
@@ -291,7 +374,7 @@ public abstract class BTreeKeySerializer<K>{
      * @param <A> first tuple value
      * @param <B> second tuple value
      */
-    public final  static class Tuple2KeySerializer<A,B> extends  BTreeKeySerializer<Fun.Tuple2<A,B>> implements Serializable {
+    public final  static class Tuple2KeySerializer<A,B> extends  BTreeKeySerializer<Fun.Tuple2<A,B>,Fun.Tuple2<A,B>,Fun.Tuple2<A,B>[]> implements Serializable {
 
         private static final long serialVersionUID = 2183804367032891772L;
         protected final Comparator<A> aComparator;
@@ -328,22 +411,18 @@ public abstract class BTreeKeySerializer<K>{
             comparator = new Fun.Tuple2Comparator<A,B>(aComparator,bComparator);
         }
 
-        @Override
-        public Comparator<Fun.Tuple2<A,B>> getComparator() {
-            return comparator;
-        }
 
         @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
+        public void serialize(DataOutput out,  Fun.Tuple2<A,B>[] keys) throws IOException {
             int acount=0;
-            for(int i=start;i<end;i++){
+            for(int i=0;i<keys.length;i++){
                 Fun.Tuple2<A,B> t = (Fun.Tuple2<A, B>) keys[i];
                 if(acount==0){
                     //write new A
                     aSerializer.serialize(out,t.a);
                     //count how many A are following
                     acount=1;
-                    while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple2<A, B>) keys[i+acount]).a)==0){
+                    while(i+acount<keys.length && aComparator.compare(t.a, ((Fun.Tuple2<A, B>) keys[i+acount]).a)==0){
                         acount++;
                     }
                     DataIO.packInt(out, acount);
@@ -355,12 +434,12 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
-            Object[] ret = new Object[size];
+        public Fun.Tuple2<A,B>[] deserialize(DataInput in, int nodeSize) throws IOException {
+            Fun.Tuple2<A,B>[] ret = new Fun.Tuple2[nodeSize];
             A a = null;
             int acount = 0;
 
-            for(int i=start;i<end;i++){
+            for(int i=0;i<nodeSize;i++){
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
@@ -373,6 +452,21 @@ public abstract class BTreeKeySerializer<K>{
             assert(acount==0);
 
             return ret;
+        }
+
+        @Override
+        public int compare(Fun.Tuple2<A, B>[] keys, int pos1, int pos2) {
+            return comparator.compare(keys[pos1],keys[pos2]);
+        }
+
+        @Override
+        public int compare(Fun.Tuple2<A, B>[] keys, int pos, Fun.Tuple2<A, B> preDigestedKey) {
+            return comparator.compare(keys[pos], preDigestedKey);
+        }
+
+        @Override
+        public Fun.Tuple2<A, B> getKey(Fun.Tuple2<A, B>[] keys, int pos) {
+            return keys[pos];
         }
 
 
@@ -418,7 +512,7 @@ public abstract class BTreeKeySerializer<K>{
      * @param <B> second tuple value
      * @param <C> third tuple value
      */
-    public static class Tuple3KeySerializer<A,B,C> extends  BTreeKeySerializer<Fun.Tuple3<A,B,C>> implements Serializable {
+    public static class Tuple3KeySerializer<A,B,C> extends  BTreeKeySerializer<Fun.Tuple3<A,B,C>,Fun.Tuple3<A,B,C>,Fun.Tuple3<A,B,C>[]> implements Serializable {
 
         private static final long serialVersionUID = 2932442956138713885L;
         protected final Comparator<A> aComparator;
@@ -465,23 +559,17 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Comparator<Fun.Tuple3<A,B,C>> getComparator() {
-            return comparator;
-        }
-
-
-        @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
+        public void serialize(DataOutput out, Fun.Tuple3<A,B,C>[] keys) throws IOException {
             int acount=0;
             int bcount=0;
-            for(int i=start;i<end;i++){
+            for(int i=0;i<keys.length;i++){
                 Fun.Tuple3<A,B,C> t = (Fun.Tuple3<A, B,C>) keys[i];
                 if(acount==0){
                     //write new A
                     aSerializer.serialize(out,t.a);
                     //count how many A are following
                     acount=1;
-                    while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple3<A, B, C>) keys[i+acount]).a)==0){
+                    while(i+acount<keys.length && aComparator.compare(t.a, ((Fun.Tuple3<A, B, C>) keys[i+acount]).a)==0){
                         acount++;
                     }
                     DataIO.packInt(out, acount);
@@ -491,7 +579,7 @@ public abstract class BTreeKeySerializer<K>{
                     bSerializer.serialize(out,t.b);
                     //count how many B are following
                     bcount=1;
-                    while(i+bcount<end && bComparator.compare(t.b, ((Fun.Tuple3<A, B,C>) keys[i+bcount]).b)==0){
+                    while(i+bcount<keys.length && bComparator.compare(t.b, ((Fun.Tuple3<A, B,C>) keys[i+bcount]).b)==0){
                         bcount++;
                     }
                     DataIO.packInt(out, bcount);
@@ -508,14 +596,14 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
-            Object[] ret = new Object[size];
+        public Fun.Tuple3<A,B,C>[] deserialize(DataInput in, int nodeSize) throws IOException {
+            Fun.Tuple3<A,B,C>[] ret = new Fun.Tuple3[nodeSize];
             A a = null;
             int acount = 0;
             B b = null;
             int bcount = 0;
 
-            for(int i=start;i<end;i++){
+            for(int i=0;i<nodeSize;i++){
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
@@ -536,6 +624,22 @@ public abstract class BTreeKeySerializer<K>{
 
             return ret;
         }
+
+        @Override
+        public int compare(Fun.Tuple3<A, B, C>[] keys, int pos1, int pos2) {
+            return comparator.compare(keys[pos1],keys[pos2]);
+        }
+
+        @Override
+        public int compare(Fun.Tuple3<A, B, C>[] keys, int pos, Fun.Tuple3<A, B, C> preDigestedKey) {
+            return comparator.compare(keys[pos], preDigestedKey);
+        }
+
+        @Override
+        public Fun.Tuple3<A, B, C> getKey(Fun.Tuple3<A, B, C>[] keys, int pos) {
+            return keys[pos];
+        }
+
 
         @Override
         public boolean equals(Object o) {
@@ -583,7 +687,7 @@ public abstract class BTreeKeySerializer<K>{
      * @param <B> second tuple value
      * @param <C> third tuple value
      */
-    public static class Tuple4KeySerializer<A,B,C,D> extends  BTreeKeySerializer<Fun.Tuple4<A,B,C,D>> implements Serializable {
+    public static class Tuple4KeySerializer<A,B,C,D> extends  BTreeKeySerializer<Fun.Tuple4<A,B,C,D>,Fun.Tuple4<A,B,C,D>,Fun.Tuple4<A,B,C,D>[]> implements Serializable {
 
         private static final long serialVersionUID = -1835761249723528530L;
         protected final Comparator<A> aComparator;
@@ -638,25 +742,20 @@ public abstract class BTreeKeySerializer<K>{
             this.comparator = new Fun.Tuple4Comparator<A,B,C,D>(aComparator,bComparator,cComparator,dComparator);
         }
 
-        @Override
-        public Comparator<Fun.Tuple4<A,B,C,D>> getComparator() {
-            return comparator;
-        }
-
 
         @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
+        public void serialize(DataOutput out, Fun.Tuple4<A,B,C,D>[] keys) throws IOException {
             int acount=0;
             int bcount=0;
             int ccount=0;
-            for(int i=start;i<end;i++){
+            for(int i=0;i<keys.length;i++){
                 Fun.Tuple4<A,B,C,D> t = (Fun.Tuple4<A, B,C,D>) keys[i];
                 if(acount==0){
                     //write new A
                     aSerializer.serialize(out,t.a);
                     //count how many A are following
                     acount=1;
-                    while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple4<A, B, C,D>) keys[i+acount]).a)==0){
+                    while(i+acount<keys.length && aComparator.compare(t.a, ((Fun.Tuple4<A, B, C,D>) keys[i+acount]).a)==0){
                         acount++;
                     }
                     DataIO.packInt(out, acount);
@@ -666,7 +765,7 @@ public abstract class BTreeKeySerializer<K>{
                     bSerializer.serialize(out,t.b);
                     //count how many B are following
                     bcount=1;
-                    while(i+bcount<end && bComparator.compare(t.b, ((Fun.Tuple4<A, B,C,D>) keys[i+bcount]).b)==0){
+                    while(i+bcount<keys.length && bComparator.compare(t.b, ((Fun.Tuple4<A, B,C,D>) keys[i+bcount]).b)==0){
                         bcount++;
                     }
                     DataIO.packInt(out, bcount);
@@ -676,7 +775,7 @@ public abstract class BTreeKeySerializer<K>{
                     cSerializer.serialize(out,t.c);
                     //count how many C are following
                     ccount=1;
-                    while(i+ccount<end && cComparator.compare(t.c, ((Fun.Tuple4<A, B,C,D>) keys[i+ccount]).c)==0){
+                    while(i+ccount<keys.length && cComparator.compare(t.c, ((Fun.Tuple4<A, B,C,D>) keys[i+ccount]).c)==0){
                         ccount++;
                     }
                     DataIO.packInt(out, ccount);
@@ -692,8 +791,8 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
-            Object[] ret = new Object[size];
+        public Fun.Tuple4<A,B,C,D>[] deserialize(DataInput in, int nodeSize) throws IOException {
+            Fun.Tuple4<A,B,C,D>[] ret = new Fun.Tuple4[nodeSize];
             A a = null;
             int acount = 0;
             B b = null;
@@ -702,7 +801,7 @@ public abstract class BTreeKeySerializer<K>{
             int ccount = 0;
 
 
-            for(int i=start;i<end;i++){
+            for(int i=0;i<nodeSize;i++){
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
@@ -731,6 +830,23 @@ public abstract class BTreeKeySerializer<K>{
 
             return ret;
         }
+
+        @Override
+        public int compare(Fun.Tuple4<A, B, C, D>[] keys, int pos1, int pos2) {
+            return comparator.compare(keys[pos1],keys[pos2]);
+        }
+
+        @Override
+        public int compare(Fun.Tuple4<A, B, C, D>[] keys, int pos, Fun.Tuple4<A, B, C, D> preDigestedKey) {
+            return comparator.compare(keys[pos], preDigestedKey);
+        }
+
+        @Override
+        public Fun.Tuple4<A, B, C, D> getKey(Fun.Tuple4<A, B, C, D>[] keys, int pos) {
+            return keys[pos];
+        }
+
+
 
         @Override
         public boolean equals(Object o) {
@@ -777,7 +893,7 @@ public abstract class BTreeKeySerializer<K>{
      * @param <B> second tuple value
      * @param <C> third tuple value
      */
-    public static class Tuple5KeySerializer<A,B,C,D,E> extends  BTreeKeySerializer<Fun.Tuple5<A,B,C,D,E>> implements Serializable {
+    public static class Tuple5KeySerializer<A,B,C,D,E> extends  BTreeKeySerializer<Fun.Tuple5<A,B,C,D,E>,Fun.Tuple5<A,B,C,D,E>,Fun.Tuple5<A,B,C,D,E>[]> implements Serializable {
 
         private static final long serialVersionUID = 8607477718850453705L;
         protected final Comparator<A> aComparator;
@@ -832,24 +948,19 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Comparator<Fun.Tuple5<A,B,C,D,E>> getComparator() {
-            return comparator;
-        }
-
-        @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
+        public void serialize(DataOutput out,  Fun.Tuple5<A,B,C,D,E>[] keys) throws IOException {
             int acount=0;
             int bcount=0;
             int ccount=0;
             int dcount=0;
-            for(int i=start;i<end;i++){
+            for(int i=0;i<keys.length;i++){
                 Fun.Tuple5<A,B,C,D,E> t = (Fun.Tuple5<A, B,C,D,E>) keys[i];
                 if(acount==0){
                     //write new A
                     aSerializer.serialize(out,t.a);
                     //count how many A are following
                     acount=1;
-                    while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple5<A, B, C,D, E>) keys[i+acount]).a)==0){
+                    while(i+acount<keys.length && aComparator.compare(t.a, ((Fun.Tuple5<A, B, C,D, E>) keys[i+acount]).a)==0){
                         acount++;
                     }
                     DataIO.packInt(out, acount);
@@ -859,7 +970,7 @@ public abstract class BTreeKeySerializer<K>{
                     bSerializer.serialize(out,t.b);
                     //count how many B are following
                     bcount=1;
-                    while(i+bcount<end && bComparator.compare(t.b, ((Fun.Tuple5<A, B,C,D, E>) keys[i+bcount]).b)==0){
+                    while(i+bcount<keys.length && bComparator.compare(t.b, ((Fun.Tuple5<A, B,C,D, E>) keys[i+bcount]).b)==0){
                         bcount++;
                     }
                     DataIO.packInt(out, bcount);
@@ -869,7 +980,7 @@ public abstract class BTreeKeySerializer<K>{
                     cSerializer.serialize(out,t.c);
                     //count how many C are following
                     ccount=1;
-                    while(i+ccount<end && cComparator.compare(t.c, ((Fun.Tuple5<A, B,C,D, E>) keys[i+ccount]).c)==0){
+                    while(i+ccount<keys.length && cComparator.compare(t.c, ((Fun.Tuple5<A, B,C,D, E>) keys[i+ccount]).c)==0){
                         ccount++;
                     }
                     DataIO.packInt(out, ccount);
@@ -880,7 +991,7 @@ public abstract class BTreeKeySerializer<K>{
                     dSerializer.serialize(out,t.d);
                     //count how many D are following
                     dcount=1;
-                    while(i+dcount<end && dComparator.compare(t.d, ((Fun.Tuple5<A, B,C,D,E>) keys[i+dcount]).d)==0){
+                    while(i+dcount<keys.length && dComparator.compare(t.d, ((Fun.Tuple5<A, B,C,D,E>) keys[i+dcount]).d)==0){
                         dcount++;
                     }
                     DataIO.packInt(out, dcount);
@@ -897,8 +1008,8 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
-            Object[] ret = new Object[size];
+        public Fun.Tuple5<A,B,C,D,E>[] deserialize(DataInput in,  int nodeSize) throws IOException {
+            Fun.Tuple5<A,B,C,D,E>[] ret = new Fun.Tuple5[nodeSize];
             A a = null;
             int acount = 0;
             B b = null;
@@ -908,7 +1019,7 @@ public abstract class BTreeKeySerializer<K>{
             D d = null;
             int dcount = 0;
 
-            for(int i=start;i<end;i++){
+            for(int i=0;i<nodeSize;i++){
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
@@ -944,6 +1055,21 @@ public abstract class BTreeKeySerializer<K>{
             assert(dcount==0);
 
             return ret;
+        }
+
+        @Override
+        public int compare(Fun.Tuple5<A, B, C, D, E>[] keys, int pos1, int pos2) {
+            return comparator.compare(keys[pos1],keys[pos2]);
+        }
+
+        @Override
+        public int compare(Fun.Tuple5<A, B, C, D, E>[] keys, int pos, Fun.Tuple5<A, B, C, D, E> preDigestedKey) {
+            return comparator.compare(keys[pos], preDigestedKey);
+        }
+
+        @Override
+        public Fun.Tuple5<A, B, C, D, E> getKey(Fun.Tuple5<A, B, C, D, E>[] keys, int pos) {
+            return keys[pos];
         }
 
 
@@ -994,7 +1120,7 @@ public abstract class BTreeKeySerializer<K>{
      * @param <B> second tuple value
      * @param <C> third tuple value
      */
-    public static class Tuple6KeySerializer<A,B,C,D,E,F> extends  BTreeKeySerializer<Fun.Tuple6<A,B,C,D,E,F>> implements Serializable {
+    public static class Tuple6KeySerializer<A,B,C,D,E,F> extends  BTreeKeySerializer<Fun.Tuple6<A,B,C,D,E,F>,Fun.Tuple6<A,B,C,D,E,F>,Fun.Tuple6<A,B,C,D,E,F>[]> implements Serializable {
 
         private static final long serialVersionUID = 3666600849149868404L;
         protected final Comparator<A> aComparator;
@@ -1056,26 +1182,20 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Comparator<Fun.Tuple6<A,B,C,D,E,F>> getComparator() {
-            return comparator;
-        }
-
-
-        @Override
-        public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
+        public void serialize(DataOutput out, Fun.Tuple6<A,B,C,D,E,F>[] keys) throws IOException {
             int acount=0;
             int bcount=0;
             int ccount=0;
             int dcount=0;
             int ecount=0;
-            for(int i=start;i<end;i++){
+            for(int i=0;i<keys.length;i++){
                 Fun.Tuple6<A,B,C,D,E,F> t = (Fun.Tuple6<A, B,C,D,E,F>) keys[i];
                 if(acount==0){
                     //write new A
                     aSerializer.serialize(out,t.a);
                     //count how many A are following
                     acount=1;
-                    while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple6<A, B, C,D, E,F>) keys[i+acount]).a)==0){
+                    while(i+acount<keys.length && aComparator.compare(t.a, ((Fun.Tuple6<A, B, C,D, E,F>) keys[i+acount]).a)==0){
                         acount++;
                     }
                     DataIO.packInt(out, acount);
@@ -1085,7 +1205,7 @@ public abstract class BTreeKeySerializer<K>{
                     bSerializer.serialize(out,t.b);
                     //count how many B are following
                     bcount=1;
-                    while(i+bcount<end && bComparator.compare(t.b, ((Fun.Tuple6<A, B,C,D, E,F>) keys[i+bcount]).b)==0){
+                    while(i+bcount<keys.length && bComparator.compare(t.b, ((Fun.Tuple6<A, B,C,D, E,F>) keys[i+bcount]).b)==0){
                         bcount++;
                     }
                     DataIO.packInt(out, bcount);
@@ -1095,7 +1215,7 @@ public abstract class BTreeKeySerializer<K>{
                     cSerializer.serialize(out,t.c);
                     //count how many C are following
                     ccount=1;
-                    while(i+ccount<end && cComparator.compare(t.c, ((Fun.Tuple6<A, B,C,D, E,F>) keys[i+ccount]).c)==0){
+                    while(i+ccount<keys.length && cComparator.compare(t.c, ((Fun.Tuple6<A, B,C,D, E,F>) keys[i+ccount]).c)==0){
                         ccount++;
                     }
                     DataIO.packInt(out, ccount);
@@ -1106,7 +1226,7 @@ public abstract class BTreeKeySerializer<K>{
                     dSerializer.serialize(out,t.d);
                     //count how many D are following
                     dcount=1;
-                    while(i+dcount<end && dComparator.compare(t.d, ((Fun.Tuple6<A, B,C,D,E,F>) keys[i+dcount]).d)==0){
+                    while(i+dcount<keys.length && dComparator.compare(t.d, ((Fun.Tuple6<A, B,C,D,E,F>) keys[i+dcount]).d)==0){
                         dcount++;
                     }
                     DataIO.packInt(out, dcount);
@@ -1117,7 +1237,7 @@ public abstract class BTreeKeySerializer<K>{
                     eSerializer.serialize(out,t.e);
                     //count how many E are following
                     ecount=1;
-                    while(i+ecount<end && eComparator.compare(t.e, ((Fun.Tuple6<A, B,C,D,E,F>) keys[i+ecount]).e)==0){
+                    while(i+ecount<keys.length && eComparator.compare(t.e, ((Fun.Tuple6<A, B,C,D,E,F>) keys[i+ecount]).e)==0){
                         ecount++;
                     }
                     DataIO.packInt(out, ecount);
@@ -1135,8 +1255,8 @@ public abstract class BTreeKeySerializer<K>{
         }
 
         @Override
-        public Object[] deserialize(DataInput in, int start, int end, int size) throws IOException {
-            Object[] ret = new Object[size];
+        public Fun.Tuple6<A,B,C,D,E,F>[] deserialize(DataInput in, int nodeSize) throws IOException {
+            Fun.Tuple6<A,B,C,D,E,F>[] ret = new Fun.Tuple6[nodeSize];
             A a = null;
             int acount = 0;
             B b = null;
@@ -1149,7 +1269,7 @@ public abstract class BTreeKeySerializer<K>{
             int ecount = 0;
 
 
-            for(int i=start;i<end;i++){
+            for(int i=0;i<nodeSize;i++){
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
@@ -1194,6 +1314,23 @@ public abstract class BTreeKeySerializer<K>{
 
             return ret;
         }
+
+
+        @Override
+        public int compare(Fun.Tuple6<A, B, C, D, E, F>[] keys, int pos1, int pos2) {
+            return comparator.compare(keys[pos1],keys[pos2]);
+        }
+
+        @Override
+        public int compare(Fun.Tuple6<A, B, C, D, E, F>[] keys, int pos, Fun.Tuple6<A, B, C, D, E, F> preDigestedKey) {
+            return comparator.compare(keys[pos], preDigestedKey);
+        }
+
+        @Override
+        public Fun.Tuple6<A, B, C, D, E, F> getKey(Fun.Tuple6<A, B, C, D, E, F>[] keys, int pos) {
+            return keys[pos];
+        }
+
 
 
         @Override

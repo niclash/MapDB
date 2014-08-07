@@ -304,7 +304,7 @@ public class SerializerPojoTest extends TestCase {
         Set set = db.getHashSet("testSerializerPojo");
         set.add(new test_pojo_reload_TestClass("test"));
         db.commit();
-//        System.out.println(((SerializerPojo)db.defaultSerializer).registered);
+//        System.out.println(((SerializerPojo)db.serializer).registered);
         int prevsize = ((SerializerPojo)db.getDefaultSerializer()).registered.size();
 
         db.close();
@@ -314,7 +314,7 @@ public class SerializerPojoTest extends TestCase {
         set.add(new test_pojo_reload_TestClass("test2"));
         db.commit();
         int newsize = ((SerializerPojo)db.getDefaultSerializer()).registered.size();
-//        System.out.println(((SerializerPojo)db.defaultSerializer).registered);
+//        System.out.println(((SerializerPojo)db.serializer).registered);
         db.close();
 
         assertEquals(prevsize, newsize);
