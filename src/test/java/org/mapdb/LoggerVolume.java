@@ -168,8 +168,8 @@ public class LoggerVolume extends Volume{
     }
 
     @Override
-    public DataInput2 getDataInput(long offset, int size) {
-        return (DataInput2) logged.getDataInput(offset, size);
+    public DataIO.DataInputByteBuffer getDataInput(long offset, int size) {
+        return (DataIO.DataInputByteBuffer) logged.getDataInput(offset, size);
     }
 
     @Override

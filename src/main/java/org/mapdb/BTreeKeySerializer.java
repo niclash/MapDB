@@ -108,10 +108,10 @@ public abstract class BTreeKeySerializer<K>{
         public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
             if(start>=end) return;
             long prev = (Long)keys[start];
-            DataOutput2.packLong(out,prev);
+            DataIO.packLong(out, prev);
             for(int i=start+1;i<end;i++){
                 long curr = (Long)keys[i];
-                DataOutput2.packLong(out, curr-prev);
+                DataIO.packLong(out, curr - prev);
                 prev = curr;
             }
         }
@@ -121,7 +121,7 @@ public abstract class BTreeKeySerializer<K>{
             Object[] ret = new Long[size];
             long prev = 0 ;
             for(int i = start; i<end; i++){
-                prev += DataInput2.unpackLong(in);
+                prev += DataIO.unpackLong(in);
                 ret[i] = new Long(prev);
             }
             return ret;
@@ -143,10 +143,10 @@ public abstract class BTreeKeySerializer<K>{
         public void serialize(DataOutput out, int start, int end, Object[] keys) throws IOException {
             if(start>=end) return;
             int prev = (Integer)keys[start];
-            DataOutput2.packLong(out,prev);
+            DataIO.packLong(out, prev);
             for(int i=start+1;i<end;i++){
                 int curr = (Integer)keys[i];
-                DataOutput2.packInt(out, curr-prev);
+                DataIO.packInt(out, curr - prev);
                 prev = curr;
             }
         }
@@ -156,7 +156,7 @@ public abstract class BTreeKeySerializer<K>{
             Object[] ret = new Integer[size];
             int prev = 0 ;
             for(int i = start; i<end; i++){
-                prev +=  DataInput2.unpackInt(in);
+                prev +=  DataIO.unpackInt(in);
                 ret[i] = new Integer(prev);
             }
             return ret;
@@ -214,11 +214,11 @@ public abstract class BTreeKeySerializer<K>{
      * author: Kevin Day
      */
     public static byte[] leadingValuePackRead(DataInput in, byte[] previous, int ignoreLeadingCount) throws IOException {
-        int len = DataInput2.unpackInt(in) - 1;  // 0 indicates null
+        int len = DataIO.unpackInt(in) - 1;  // 0 indicates null
         if (len == -1)
             return null;
 
-        int actualCommon = DataInput2.unpackInt(in);
+        int actualCommon = DataIO.unpackInt(in);
 
         byte[] buf = new byte[len];
 
@@ -244,7 +244,7 @@ public abstract class BTreeKeySerializer<K>{
      */
     public static void leadingValuePackWrite(DataOutput out, byte[] buf, byte[] previous, int ignoreLeadingCount) throws IOException {
         if (buf == null) {
-            DataOutput2.packInt(out, 0);
+            DataIO.packInt(out, 0);
             return;
         }
 
@@ -263,8 +263,8 @@ public abstract class BTreeKeySerializer<K>{
 
 
         // there are enough common bytes to justify compression
-        DataOutput2.packInt(out, buf.length + 1);// store as +1, 0 indicates null
-        DataOutput2.packInt(out, actualCommon);
+        DataIO.packInt(out, buf.length + 1);// store as +1, 0 indicates null
+        DataIO.packInt(out, actualCommon);
         out.write(buf, 0, ignoreLeadingCount);
         out.write(buf, actualCommon, buf.length - actualCommon);
 
@@ -333,7 +333,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple2<A, B>) keys[i+acount]).a)==0){
                         acount++;
                     }
-                    DataOutput2.packInt(out,acount);
+                    DataIO.packInt(out, acount);
                 }
                 bSerializer.serialize(out,t.b);
 
@@ -351,7 +351,7 @@ public abstract class BTreeKeySerializer<K>{
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
-                    acount = DataInput2.unpackInt(in);
+                    acount = DataIO.unpackInt(in);
                 }
                 B b = bSerializer.deserialize(in,-1);
                 ret[i]= Fun.t2(a,b);
@@ -464,7 +464,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple3<A, B, C>) keys[i+acount]).a)==0){
                         acount++;
                     }
-                    DataOutput2.packInt(out,acount);
+                    DataIO.packInt(out, acount);
                 }
                 if(bcount==0){
                     //write new B
@@ -474,7 +474,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+bcount<end && bComparator.compare(t.b, ((Fun.Tuple3<A, B,C>) keys[i+bcount]).b)==0){
                         bcount++;
                     }
-                    DataOutput2.packInt(out,bcount);
+                    DataIO.packInt(out, bcount);
                 }
 
 
@@ -499,12 +499,12 @@ public abstract class BTreeKeySerializer<K>{
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
-                    acount = DataInput2.unpackInt(in);
+                    acount = DataIO.unpackInt(in);
                 }
                 if(bcount==0){
                     //read new B
                     b = bSerializer.deserialize(in,-1);
-                    bcount = DataInput2.unpackInt(in);
+                    bcount = DataIO.unpackInt(in);
                 }
                 C c = cSerializer.deserialize(in,-1);
                 ret[i]= Fun.t3(a, b, c);
@@ -634,7 +634,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple4<A, B, C,D>) keys[i+acount]).a)==0){
                         acount++;
                     }
-                    DataOutput2.packInt(out,acount);
+                    DataIO.packInt(out, acount);
                 }
                 if(bcount==0){
                     //write new B
@@ -644,7 +644,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+bcount<end && bComparator.compare(t.b, ((Fun.Tuple4<A, B,C,D>) keys[i+bcount]).b)==0){
                         bcount++;
                     }
-                    DataOutput2.packInt(out,bcount);
+                    DataIO.packInt(out, bcount);
                 }
                 if(ccount==0){
                     //write new C
@@ -654,7 +654,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+ccount<end && cComparator.compare(t.c, ((Fun.Tuple4<A, B,C,D>) keys[i+ccount]).c)==0){
                         ccount++;
                     }
-                    DataOutput2.packInt(out,ccount);
+                    DataIO.packInt(out, ccount);
                 }
 
 
@@ -681,17 +681,17 @@ public abstract class BTreeKeySerializer<K>{
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
-                    acount = DataInput2.unpackInt(in);
+                    acount = DataIO.unpackInt(in);
                 }
                 if(bcount==0){
                     //read new B
                     b = bSerializer.deserialize(in,-1);
-                    bcount = DataInput2.unpackInt(in);
+                    bcount = DataIO.unpackInt(in);
                 }
                 if(ccount==0){
                     //read new C
                     c = cSerializer.deserialize(in,-1);
-                    ccount = DataInput2.unpackInt(in);
+                    ccount = DataIO.unpackInt(in);
                 }
 
                 D d = dSerializer.deserialize(in,-1);
@@ -824,7 +824,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple5<A, B, C,D, E>) keys[i+acount]).a)==0){
                         acount++;
                     }
-                    DataOutput2.packInt(out,acount);
+                    DataIO.packInt(out, acount);
                 }
                 if(bcount==0){
                     //write new B
@@ -834,7 +834,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+bcount<end && bComparator.compare(t.b, ((Fun.Tuple5<A, B,C,D, E>) keys[i+bcount]).b)==0){
                         bcount++;
                     }
-                    DataOutput2.packInt(out,bcount);
+                    DataIO.packInt(out, bcount);
                 }
                 if(ccount==0){
                     //write new C
@@ -844,7 +844,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+ccount<end && cComparator.compare(t.c, ((Fun.Tuple5<A, B,C,D, E>) keys[i+ccount]).c)==0){
                         ccount++;
                     }
-                    DataOutput2.packInt(out,ccount);
+                    DataIO.packInt(out, ccount);
                 }
 
                 if(dcount==0){
@@ -855,7 +855,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+dcount<end && dComparator.compare(t.d, ((Fun.Tuple5<A, B,C,D,E>) keys[i+dcount]).d)==0){
                         dcount++;
                     }
-                    DataOutput2.packInt(out,dcount);
+                    DataIO.packInt(out, dcount);
                 }
 
 
@@ -884,22 +884,22 @@ public abstract class BTreeKeySerializer<K>{
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
-                    acount = DataInput2.unpackInt(in);
+                    acount = DataIO.unpackInt(in);
                 }
                 if(bcount==0){
                     //read new B
                     b = bSerializer.deserialize(in,-1);
-                    bcount = DataInput2.unpackInt(in);
+                    bcount = DataIO.unpackInt(in);
                 }
                 if(ccount==0){
                     //read new C
                     c = cSerializer.deserialize(in,-1);
-                    ccount = DataInput2.unpackInt(in);
+                    ccount = DataIO.unpackInt(in);
                 }
                 if(dcount==0){
                     //read new D
                     d = dSerializer.deserialize(in,-1);
-                    dcount = DataInput2.unpackInt(in);
+                    dcount = DataIO.unpackInt(in);
                 }
 
 
@@ -1044,7 +1044,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+acount<end && aComparator.compare(t.a, ((Fun.Tuple6<A, B, C,D, E,F>) keys[i+acount]).a)==0){
                         acount++;
                     }
-                    DataOutput2.packInt(out,acount);
+                    DataIO.packInt(out, acount);
                 }
                 if(bcount==0){
                     //write new B
@@ -1054,7 +1054,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+bcount<end && bComparator.compare(t.b, ((Fun.Tuple6<A, B,C,D, E,F>) keys[i+bcount]).b)==0){
                         bcount++;
                     }
-                    DataOutput2.packInt(out,bcount);
+                    DataIO.packInt(out, bcount);
                 }
                 if(ccount==0){
                     //write new C
@@ -1064,7 +1064,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+ccount<end && cComparator.compare(t.c, ((Fun.Tuple6<A, B,C,D, E,F>) keys[i+ccount]).c)==0){
                         ccount++;
                     }
-                    DataOutput2.packInt(out,ccount);
+                    DataIO.packInt(out, ccount);
                 }
 
                 if(dcount==0){
@@ -1075,7 +1075,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+dcount<end && dComparator.compare(t.d, ((Fun.Tuple6<A, B,C,D,E,F>) keys[i+dcount]).d)==0){
                         dcount++;
                     }
-                    DataOutput2.packInt(out,dcount);
+                    DataIO.packInt(out, dcount);
                 }
 
                 if(ecount==0){
@@ -1086,7 +1086,7 @@ public abstract class BTreeKeySerializer<K>{
                     while(i+ecount<end && eComparator.compare(t.e, ((Fun.Tuple6<A, B,C,D,E,F>) keys[i+ecount]).e)==0){
                         ecount++;
                     }
-                    DataOutput2.packInt(out,ecount);
+                    DataIO.packInt(out, ecount);
                 }
 
 
@@ -1119,28 +1119,28 @@ public abstract class BTreeKeySerializer<K>{
                 if(acount==0){
                     //read new A
                     a = aSerializer.deserialize(in,-1);
-                    acount = DataInput2.unpackInt(in);
+                    acount = DataIO.unpackInt(in);
                 }
                 if(bcount==0){
                     //read new B
                     b = bSerializer.deserialize(in,-1);
-                    bcount = DataInput2.unpackInt(in);
+                    bcount = DataIO.unpackInt(in);
                 }
                 if(ccount==0){
                     //read new C
                     c = cSerializer.deserialize(in,-1);
-                    ccount = DataInput2.unpackInt(in);
+                    ccount = DataIO.unpackInt(in);
                 }
                 if(dcount==0){
                     //read new D
                     d = dSerializer.deserialize(in,-1);
-                    dcount = DataInput2.unpackInt(in);
+                    dcount = DataIO.unpackInt(in);
                 }
 
                 if(ecount==0){
                     //read new E
                     e = eSerializer.deserialize(in,-1);
-                    ecount = DataInput2.unpackInt(in);
+                    ecount = DataIO.unpackInt(in);
                 }
 
 

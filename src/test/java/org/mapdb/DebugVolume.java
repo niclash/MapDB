@@ -96,8 +96,8 @@ public class DebugVolume extends Volume{
     }
 
     @Override
-    public DataInput2 getDataInput(long offset, int size) {
-        DataInput2 ret = (DataInput2) vol.getDataInput(offset, size);
+    public DataIO.DataInputByteBuffer getDataInput(long offset, int size) {
+        DataIO.DataInputByteBuffer ret = (DataIO.DataInputByteBuffer) vol.getDataInput(offset, size);
         out.println("getDataInput: "+offset+" - "+size);
         byte[] bb = new byte[size];
         try {

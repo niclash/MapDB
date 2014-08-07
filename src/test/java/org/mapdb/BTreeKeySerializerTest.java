@@ -71,7 +71,7 @@ public class BTreeKeySerializerTest {
         v.add(Fun.t2("zz",3));
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
         tuple2_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
@@ -94,7 +94,7 @@ public class BTreeKeySerializerTest {
 
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
         tuple2_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
@@ -123,7 +123,7 @@ public class BTreeKeySerializerTest {
         v.add(Fun.t3("zz",3,2D));
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
         tuple3_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
@@ -148,7 +148,7 @@ public class BTreeKeySerializerTest {
 
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
         tuple3_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
@@ -177,7 +177,7 @@ public class BTreeKeySerializerTest {
         v.add(Fun.t4("zz",3,2D,2L));
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
         tuple4_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
@@ -204,7 +204,7 @@ public class BTreeKeySerializerTest {
 
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
         tuple4_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
@@ -233,7 +233,7 @@ public class BTreeKeySerializerTest {
         v.add(Fun.t5("zz",3,2D,2L,"zz"));
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
         tuple5_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
@@ -263,7 +263,7 @@ public class BTreeKeySerializerTest {
 
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
         tuple5_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
@@ -292,7 +292,7 @@ public class BTreeKeySerializerTest {
         v.add(Fun.t6("zz",3,2D,2L,"zz","asd"));
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
         tuple6_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
@@ -324,7 +324,7 @@ public class BTreeKeySerializerTest {
 
         v.add(null);
 
-        DataOutput2 out = new DataOutput2();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
         tuple6_serializer.serialize(out, 1, v.size() - 1, v.toArray());
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());

@@ -344,15 +344,15 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             //write node metas, right now this is ignored, but in future it could be used for counted btrees or aggregations
             for(int i=0;i<numberOfNodeMetas;i++){
-                DataOutput2.packLong(out,0);
+                DataIO.packLong(out, 0);
             }
 
             //longs go first, so it is possible to reconstruct tree without serializer
             if(isLeaf){
-                DataOutput2.packLong(out, ((LeafNode) value).next);
+                DataIO.packLong(out, ((LeafNode) value).next);
             }else{
                 for(long child : ((DirNode)value).child)
-                    DataOutput2.packLong(out, child);
+                    DataIO.packLong(out, child);
             }
 
 
@@ -366,7 +366,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                         assert(val!=null);
                         if(valsOutsideNodes){
                             long recid = ((ValRef)val).recid;
-                            DataOutput2.packLong(out, recid);
+                            DataIO.packLong(out, recid);
                         }else{
                             valueSerializer.serialize(out,  val);
                         }
@@ -392,7 +392,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             //read node metas, right now this is ignored, but in future it could be used for counted btrees or aggregations
             for(int i=0;i<numberOfNodeMetas;i++){
-                DataInput2.unpackLong(in);
+                DataIO.unpackLong(in);
             }
 
 
@@ -415,21 +415,21 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         private BNode deserializeDir(final DataInput in, final int size, final int start, final int end) throws IOException {
             final long[] child = new long[size];
             for(int i=0;i<size;i++)
-                child[i] = DataInput2.unpackLong(in);
+                child[i] = DataIO.unpackLong(in);
             final Object[] keys = keySerializer.deserialize(in, start,end,size);
             assert(keys.length==size);
             return new DirNode(keys, child);
         }
 
         private BNode deserializeLeaf(final DataInput in, final int size, final int start, final int end) throws IOException {
-            final long next = DataInput2.unpackLong(in);
-            final Object[] keys = keySerializer.deserialize(in, start,end,size);
+            final long next = DataIO.unpackLong(in);
+            final Object[] keys = keySerializer.deserialize(in, start, end, size);
             assert(keys.length==size);
             Object[] vals = new Object[size-2];
             if(hasValues){
                 for(int i=0;i<vals.length;i++){
                     if(valsOutsideNodes){
-                        long recid = DataInput2.unpackLong(in);
+                        long recid = DataIO.unpackLong(in);
                         vals[i] = recid==0? null: new ValRef(recid);
                     }else{
                         vals[i] = valueSerializer.deserialize(in, -1);
