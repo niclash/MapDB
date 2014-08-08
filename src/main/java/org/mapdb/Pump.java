@@ -325,7 +325,7 @@ public final class Pump {
                                              int nodeSize,
                                              boolean valuesStoredOutsideNodes,
                                              long counterRecid,
-                                             BTreeKeySerializer<K> keySerializer,
+                                             BTreeKeySerializer keySerializer,
                                              Serializer<V> valueSerializer,
                                              Comparator comparator)
         {
