@@ -979,7 +979,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 }
                 currentPos = 1;
                 currentLeaf = (LeafNode) m.engine.get(currentLeaf.next, m.nodeSerializer);
-                while(currentLeaf.keys.length==2){
+                while(currentLeaf.keysLen()==2){
                     if(currentLeaf.next ==0){
                         currentLeaf = null;
                         currentPos=-1;
