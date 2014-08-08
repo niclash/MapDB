@@ -253,6 +253,12 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public boolean isRightEdge(){return rightEdge;}
 
         @Override public int keysLen(){return keys.length;}
+
+        public BNode cloneExpand(int pos, Object key, long newChild) {
+            Object[] keys2 = arrayPut(keys, pos, key);
+            long[] child2 = arrayLongPut(child, pos, newChild);
+            return new DirNode(keys2, child2);
+        }
     }
 
 
@@ -298,6 +304,31 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
 
         @Override public int keysLen(){return keys.length;}
+
+        public LeafNode cloneUpdateVal(int pos, Object value) {
+            Object[] vals2 = vals.clone();
+            vals2[pos] = value;
+            return new LeafNode(keys, vals2, next);
+        }
+
+        public LeafNode cloneExpand(int pos, Object key, Object value) {
+            Object[] keys2 = arrayPut(keys, pos, key);
+            Object[] vals2 = arrayPut(vals, pos-1, value);
+            return new LeafNode(keys2, vals2, next);
+
+        }
+
+        public LeafNode cloneRemove(int pos) {
+
+            Object[] keys2 = new Object[keys.length-1];
+            System.arraycopy(keys,0,keys2, 0, pos);
+            System.arraycopy(keys, pos+1, keys2, pos, keys2.length-pos);
+
+            Object[] vals2 = new Object[vals.length-1];
+            System.arraycopy(vals,0,vals2, 0, pos-1);
+            System.arraycopy(vals, pos, vals2, pos-1, vals2.length-(pos-1));
+            return new LeafNode(keys2,vals2,next);
+        }
     }
 
 
@@ -691,11 +722,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                         if(CC.PARANOID) assertNoLocks(nodeLocks);
                         return valExpand(oldVal);
                     }
-                    //insert new
-                    Object[] vals = Arrays.copyOf(A.vals(), A.vals().length);
-                    vals[pos-1] = value;
 
-                    A = new LeafNode(Arrays.copyOf(A.keysXX(), A.keysLen()), vals, ((LeafNode)A).next);
+                    A = ((LeafNode)A).cloneUpdateVal(pos-1, value);
                     assert(nodeLocks.get(current)==Thread.currentThread());
                     engine.update(current, A, nodeSerializer);
                     //already in here
@@ -730,20 +758,15 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             // can be new item inserted into A without splitting it?
             if(A.keysLen() - (A.isLeaf()?2:1)<maxNodeSize){
                 int pos = findChildren(v, A);
-                Object[] keys = arrayPut(A.keysXX(), pos, v);
-
+                BNode n;
                 if(A.isLeaf()){
-                    Object[] vals = arrayPut(A.vals(), pos-1, value);
-                    LeafNode n = new LeafNode(keys, vals, ((LeafNode)A).next);
-                    assert(nodeLocks.get(current)==Thread.currentThread());
-                    engine.update(current, n, nodeSerializer);
+                    n = ((LeafNode)A).cloneExpand(pos, v, value);
                 }else{
                     assert(p!=0);
-                    long[] child = arrayLongPut(A.child(), pos, p);
-                    DirNode d = new DirNode(keys, child);
-                    assert(nodeLocks.get(current)==Thread.currentThread());
-                    engine.update(current, d, nodeSerializer);
+                    n = ((DirNode)A).cloneExpand(pos,v,p);
                 }
+                assert(nodeLocks.get(current)==Thread.currentThread());
+                engine.update(current, n, nodeSerializer);
 
                 notify(key,  null, value2);
                 unlock(nodeLocks, current);
@@ -973,16 +996,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     return null;
                 }
 
-                Object[] keys2 = new Object[A.keysLen()-1];
-                System.arraycopy(A.keysXX(),0,keys2, 0, pos);
-                System.arraycopy(A.keysXX(), pos+1, keys2, pos, keys2.length-pos);
-
-                Object[] vals2 = new Object[A.vals().length-1];
-                System.arraycopy(A.vals(),0,vals2, 0, pos-1);
-                System.arraycopy(A.vals(), pos, vals2, pos-1, vals2.length-(pos-1));
-
-
-                A = new LeafNode(keys2, vals2, ((LeafNode)A).next);
+                A = ((LeafNode)A).cloneRemove(pos);
                 assert(nodeLocks.get(current)==Thread.currentThread());
                 engine.update(current, A, nodeSerializer);
                 notify((K)key, (V)oldVal, null);
