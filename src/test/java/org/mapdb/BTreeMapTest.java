@@ -39,7 +39,7 @@ public class BTreeMapTest{
 	@Test public void test_dir_node_serialization() throws IOException {
 
 
-        BTreeMap.DirNode n = new BTreeMap.DirNode(new Object[]{1,2,3, null}, new long[]{4,5,6,7});
+        BTreeMap.DirNode n = new BTreeMap.DirNode(new Object[]{1,2,3}, new long[]{4,5,6,7},true);
         BTreeMap.DirNode n2 = (BTreeMap.DirNode) UtilsTest.clone(n, m.nodeSerializer);
 
         assertArrayEquals(n.keysXX(), n2.keysXX());
@@ -48,12 +48,12 @@ public class BTreeMapTest{
 
     @Test public void test_find_children(){
 
-        BTreeMap.DirNode n  =new BTreeMap.DirNode(new Integer[]{1,2,3,4,5,6,7,8}, new long[0]);
+        BTreeMap.DirNode n  =new BTreeMap.DirNode(new Integer[]{1,2,3,4,5,6,7,8}, new long[0],false);
         assertEquals(8,m.findChildren(11, n));
         assertEquals(0,m.findChildren(1, n));
         assertEquals(0,m.findChildren(0, n));
         assertEquals(7,m.findChildren(8, n));
-        n  =new BTreeMap.DirNode(new Integer[]{10,20,30,40,50}, new long[0]);
+        n  =new BTreeMap.DirNode(new Integer[]{10,20,30,40,50}, new long[0],false);
         assertEquals(4,m.findChildren(49, n));
         assertEquals(4,m.findChildren(50, n));
         assertEquals(3,m.findChildren(40, n));
@@ -63,7 +63,7 @@ public class BTreeMapTest{
 
     @Test public void test_next_dir(){
 
-        BTreeMap.DirNode d = new BTreeMap.DirNode(new Integer[]{44,62,68, 71}, new long[]{10,20,30,40});
+        BTreeMap.DirNode d = new BTreeMap.DirNode(new Integer[]{44,62,68, 71}, new long[]{10,20,30,40},false);
 
         assertEquals(10, m.nextDir(d, 62));
         assertEquals(10, m.nextDir(d, 44));
@@ -85,14 +85,14 @@ public class BTreeMapTest{
 
         BTreeMap.DirNode d = new BTreeMap.DirNode(
                 new Object[]{null,62,68, 71},
-                new long[]{10,20,30,40});
+                new long[]{10,20,30,40},false);
         assertEquals(10, m.nextDir(d, 33));
         assertEquals(10, m.nextDir(d, 62));
         assertEquals(20, m.nextDir(d, 63));
 
         d = new BTreeMap.DirNode(
-                new Object[]{44,62,68, null},
-                new long[]{10,20,30,40});
+                new Object[]{44,62,68},
+                new long[]{10,20,30,40},true);
 
         assertEquals(10, m.nextDir(d, 62));
         assertEquals(10, m.nextDir(d, 44));

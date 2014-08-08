@@ -419,7 +419,11 @@ public final class Pump {
                 Collections.reverse(dirKeys.get(i));
                 Collections.reverse(dirRecids.get(i));
                 //put node into store
-                BTreeMap.DirNode dir = new BTreeMap.DirNode(dirKeys.get(i).toArray(), toLongArray(dirRecids.get(i)));
+                boolean rightEdge2 = dirKeys.get(i).get(dirKeys.get(i).size()-1) == null;
+                if(rightEdge2){
+                    dirKeys.get(i).remove(dirKeys.get(i).size()-1);
+                }
+                BTreeMap.DirNode dir = new BTreeMap.DirNode(dirKeys.get(i).toArray(), toLongArray(dirRecids.get(i)),rightEdge2);
                 long dirRecid = engine.put(dir,nodeSerializer);
                 Object dirStart = dirKeys.get(i).get(0);
                 dirKeys.get(i).clear();
@@ -451,7 +455,11 @@ public final class Pump {
             }
 
             //put node into store
-            BTreeMap.DirNode dir = new BTreeMap.DirNode(keys2.toArray(), toLongArray(dirRecids.get(i)));
+            boolean rightEdge3 = keys2.get(keys2.size()-1)==null;
+            if(rightEdge3){
+                keys2.remove(keys2.size()-1);
+            }
+            BTreeMap.DirNode dir = new BTreeMap.DirNode(keys2.toArray(), toLongArray(dirRecids.get(i)),rightEdge3);
             long dirRecid = engine.put(dir,nodeSerializer);
             Object dirStart = keys2.get(0);
             dirKeys.get(i+1).add(dirStart);
@@ -468,7 +476,12 @@ public final class Pump {
         if(counterRecid!=0)
             engine.update(counterRecid, counter, Serializer.LONG);
 
-        BTreeMap.DirNode dir = new BTreeMap.DirNode(dirKeys.get(len).toArray(), toLongArray(dirRecids.get(len)));
+
+        boolean rightEdge4 = dirKeys.get(len).get(dirKeys.get(len).size()-1)==null;
+        if(rightEdge4){
+            dirKeys.get(len).remove(dirKeys.get(len).size()-1);
+        }
+        BTreeMap.DirNode dir = new BTreeMap.DirNode(dirKeys.get(len).toArray(), toLongArray(dirRecids.get(len)),rightEdge4);
         long rootRecid = engine.put(dir, nodeSerializer);
         return engine.put(rootRecid,Serializer.LONG); //root recid
     }

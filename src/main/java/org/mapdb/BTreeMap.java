@@ -222,11 +222,12 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         final boolean leftEdge;
         final boolean rightEdge;
 
-        DirNode(Object[] keys, long[] child) {
+        DirNode(Object[] keys, long[] child, boolean rightEdge) {
             this.keys = keys;
             this.child = child;
             this.leftEdge = keys[0]==null;
-            this.rightEdge = keys[keys.length-1]==null;
+            this.rightEdge = rightEdge;
+            assert(keys.length==1||keys[keys.length-1]!=null);
         }
 
 
@@ -236,12 +237,18 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         public Object[] keysXX() { return keys;}
 
         @Override public Object key(int index){
+            if(rightEdge && index==keys.length)
+                return null;
             return keys[index];
         }
 
         @Override public Object[] vals() { return null;}
 
-        @Override public Object highKey() {return keys[keys.length-1];}
+        @Override public Object highKey() {
+            if(rightEdge)
+                return null;
+            return keys[keys.length-1];
+        }
 
         @Override public long[] child() { return child;}
 
@@ -253,29 +260,31 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public boolean isLeftEdge(){return leftEdge;}
         @Override public boolean isRightEdge(){return rightEdge;}
 
-        @Override public int keysLen(){return keys.length;}
+        @Override public int keysLen(){
+            return keys.length+(rightEdge?1:0);
+        }
 
         @Override
         public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
 
             keySerializer.serialize(out,isLeftEdge()?1:0,
-                    isRightEdge()?keys.length-1:keys.length,
+                    keys.length,
                     keys);
         }
 
         public BNode cloneExpand(int pos, Object key, long newChild) {
             Object[] keys2 = arrayPut(keys, pos, key);
             long[] child2 = arrayLongPut(child, pos, newChild);
-            return new DirNode(keys2, child2);
+            return new DirNode(keys2, child2,rightEdge);
         }
 
         public DirNode cloneSplitRight(int pos, int splitPos, Object key, long newChild) {
             final Object[] keys2 = arrayPut(keys, pos, key);
             final long[] child2 = arrayLongPut(child, pos, newChild);
-            final int newLen = keysLen()+1;
+
             //TODO optimize array allocation
-            return new DirNode(Arrays.copyOfRange(keys2, splitPos, newLen),
-                        Arrays.copyOfRange(child2, splitPos, newLen));
+            return new DirNode(Arrays.copyOfRange(keys2, splitPos, keys2.length),
+                        Arrays.copyOfRange(child2, splitPos, child2.length),rightEdge);
 
         }
 
@@ -284,7 +293,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             final long[] child2 = arrayLongPut(child, pos, newChild);
             long[] child3 = Arrays.copyOf(child2, splitPos+1);
             child2[splitPos] = nextNode;
-            return new DirNode(Arrays.copyOf(keys2, splitPos+1), child3);
+            //TODO optimize array allocation
+            return new DirNode(Arrays.copyOf(keys2, splitPos+1), child3,false);
         }
     }
 
@@ -303,6 +313,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             this.leftEdge = keys[0]==null;
             this.rightEdge = rightEdge;
 
+            assert(keys.length==1||keys[keys.length-1]!=null);
             assert(vals==null||keys.length == vals.length+1 +(rightEdge?0:1));
         }
 
@@ -387,6 +398,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             Object[] keys3 = Arrays.copyOf(keys2, splitPos+2);
             keys3[keys3.length-1] = keys3[keys3.length-2];
             Object[] vals3 = Arrays.copyOf(vals2, splitPos);
+            //TODO optimize array allocation
 
             //TODO check high/low keys overlap
             return new LeafNode(keys3, vals3, nextNode,false);
@@ -422,7 +434,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             //first byte encodes if is leaf (first bite) and length (last seven bites)
             assert(value.keysLen()<=255);
-            assert(!(!isLeaf && value.child().length!= value.keysLen()));
+            assert(!(!isLeaf && value.child().length!= value.keysLen())): value.toString();
             assert(!(isLeaf && hasValues && value.vals().length!= value.keysLen()-2));
             assert(!(!isLeaf && value.highKey()!=null && value.child()[value.child().length-1]==0));
 
@@ -507,24 +519,23 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 1:0;
 
             final boolean rightEdge = ((header& RIGHT_MASK) != 0);
-            final int end = rightEdge ?
-                size-1:size;
-
 
             if(isLeaf){
                 return deserializeLeaf(in, size, start, rightEdge);
             }else{
-                return deserializeDir(in, size, start, end);
+                return deserializeDir(in, size, start, rightEdge);
             }
         }
 
-        private BNode deserializeDir(final DataInput in, final int size, final int start, final int end) throws IOException {
+        private BNode deserializeDir(final DataInput in, final int size, final int start, final boolean rightEdge) throws IOException {
             final long[] child = new long[size];
             for(int i=0;i<size;i++)
                 child[i] = DataIO.unpackLong(in);
-            final Object[] keys = keySerializer.deserialize(in, start,end,size);
-            assert(keys.length==size);
-            return new DirNode(keys, child);
+
+            int arrayLen = size -(rightEdge?1:0);
+            final Object[] keys = keySerializer.deserialize(in, start,arrayLen,arrayLen);
+            assert(keys.length==size-(rightEdge?1:0));
+            return new DirNode(keys, child,rightEdge);
         }
 
         private BNode deserializeLeaf(final DataInput in, final int size, final int start, final boolean rightEdge) throws IOException {
@@ -865,9 +876,15 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                       }
                     assert(current>0);
                 }else{
-                    BNode R = new DirNode(
-                            new Object[]{A.key(0), A.highKey(), B.isLeaf()?null:B.highKey()},
-                            new long[]{current,q, 0});
+                    BNode R =
+                            B.highKey()==null? //TODO WTF? how root division works?
+                            new DirNode(
+                                new Object[]{A.key(0), A.highKey()},
+                                new long[]{current,q, 0},true)
+                            :
+                            new DirNode(
+                                new Object[]{A.key(0), A.highKey(), B.highKey()},
+                                new long[]{current,q, 0},true);
 
                     lock(nodeLocks, rootRecidRef);
                     unlock(nodeLocks, current);
