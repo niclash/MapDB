@@ -203,7 +203,9 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     /** common interface for BTree node */
     public interface BNode{
         boolean isLeaf();
-        Object[] keys();
+        boolean isLeftEdge();
+        boolean isRightEdge();
+//        Object[] keys();
         Object[] vals();
         Object highKey();
         long[] child();
@@ -211,26 +213,23 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     }
 
     public final static class DirNode implements BNode{
-        final Object[] keys;
+        private final Object[] keys;
         final long[] child;
+        final boolean leftEdge;
+        final boolean rightEdge;
 
         DirNode(Object[] keys, long[] child) {
             this.keys = keys;
             this.child = child;
+            this.leftEdge = keys[0]==null;
+            this.rightEdge = keys[keys.length-1]==null;
         }
 
-        DirNode(Object[] keys, List<Long> child) {
-            this.keys = keys;
-            this.child = new long[child.size()];
-            for(int i=0;i<child.size();i++){
-                this.child[i] = child.get(i);
-            }
-        }
 
 
         @Override public boolean isLeaf() { return false;}
 
-        @Override public Object[] keys() { return keys;}
+//        @Override public Object[] keys() { return keys;}
         @Override public Object[] vals() { return null;}
 
         @Override public Object highKey() {return keys[keys.length-1];}
@@ -242,25 +241,32 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public String toString(){
             return "Dir(K"+Arrays.toString(keys)+", C"+Arrays.toString(child)+")";
         }
+        @Override public boolean isLeftEdge(){return leftEdge;}
+        @Override public boolean isRightEdge(){return rightEdge;}
 
     }
 
 
     public final static class LeafNode implements BNode{
-        final Object[] keys;
+        private final Object[] keys;
         final Object[] vals;
         final long next;
+        final boolean leftEdge;
+        final boolean rightEdge;
 
         LeafNode(Object[] keys, Object[] vals, long next) {
             this.keys = keys;
             this.vals = vals;
             this.next = next;
+            this.leftEdge = keys[0]==null;
+            this.rightEdge = keys[keys.length-1]==null;
+
             assert(vals==null||keys.length == vals.length+2);
         }
 
         @Override public boolean isLeaf() { return true;}
 
-        @Override public Object[] keys() { return keys;}
+//        @Override public Object[] keys() { return keys;}
         @Override public Object[] vals() { return vals;}
 
         @Override public Object highKey() {return keys[keys.length-1];}
@@ -271,6 +277,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public String toString(){
             return "Leaf(K"+Arrays.toString(keys)+", V"+Arrays.toString(vals)+", L="+next+")";
         }
+
+
+        @Override public boolean isLeftEdge(){return leftEdge;}
+        @Override public boolean isRightEdge(){return rightEdge;}
     }
 
 
@@ -322,14 +332,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }
 
 
-            final boolean left = value.keys()[0] == null;
-            final boolean right = value.keys()[value.keys().length-1] == null;
-
-
             final int header =
                 (isLeaf ? LEAF_MASK : 0) |
-                (left ? LEFT_MASK : 0) |
-                (right ? RIGHT_MASK : 0) |
+                (value.isLeftEdge() ? LEFT_MASK : 0) |
+                (value.isRightEdge() ? RIGHT_MASK : 0) |
                 value.keys().length;
 
             out.writeShort(header);
@@ -348,8 +354,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }
 
 
-            keySerializer.serialize(out,left?1:0,
-                    right?value.keys().length-1:value.keys().length,
+            keySerializer.serialize(out,value.isLeftEdge()?1:0,
+                    value.isRightEdge()?value.keys().length-1:value.keys().length,
                     value.keys());
 
             if(isLeaf){
