@@ -210,6 +210,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         Object highKey();
         long[] child();
         long next();
+
+        int keysLen();
     }
 
     public final static class DirNode implements BNode{
@@ -244,6 +246,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public boolean isLeftEdge(){return leftEdge;}
         @Override public boolean isRightEdge(){return rightEdge;}
 
+        @Override public int keysLen(){return keys.length;}
     }
 
 
@@ -281,6 +284,9 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         @Override public boolean isLeftEdge(){return leftEdge;}
         @Override public boolean isRightEdge(){return rightEdge;}
+
+
+        @Override public int keysLen(){return keys.length;}
     }
 
 
@@ -311,14 +317,14 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             final boolean isLeaf = value.isLeaf();
 
             //first byte encodes if is leaf (first bite) and length (last seven bites)
-            assert(value.keys().length<=255);
-            assert(!(!isLeaf && value.child().length!= value.keys().length));
-            assert(!(isLeaf && hasValues && value.vals().length!= value.keys().length-2));
+            assert(value.keysLen()<=255);
+            assert(!(!isLeaf && value.child().length!= value.keysLen()));
+            assert(!(isLeaf && hasValues && value.vals().length!= value.keysLen()-2));
             assert(!(!isLeaf && value.highKey()!=null && value.child()[value.child().length-1]==0));
 
             //check node integrity in paranoid mode
             if(CC.PARANOID){
-                int len = value.keys().length;
+                int len = value.keysLen();
                 for(int i=value.keys()[0]==null?2:1;
                   i<(value.keys()[len-1]==null?len-1:len);
                   i++){
@@ -336,7 +342,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 (isLeaf ? LEAF_MASK : 0) |
                 (value.isLeftEdge() ? LEFT_MASK : 0) |
                 (value.isRightEdge() ? RIGHT_MASK : 0) |
-                value.keys().length;
+                value.keysLen();
 
             out.writeShort(header);
 
@@ -355,7 +361,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
 
             keySerializer.serialize(out,value.isLeftEdge()?1:0,
-                    value.isRightEdge()?value.keys().length-1:value.keys().length,
+                    value.isRightEdge()?value.keysLen()-1:value.keysLen(),
                     value.keys());
 
             if(isLeaf){
@@ -664,7 +670,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 A = engine.get(current, nodeSerializer);
                 int pos = findChildren(v, A.keys());
                 //check if keys is already in tree
-                if(pos<A.keys().length-1 &&  v!=null && A.keys()[pos]!=null &&
+                if(pos<A.keysLen()-1 &&  v!=null && A.keys()[pos]!=null &&
                         0==comparator.compare(v,A.keys()[pos])){
                     //yes key is already in tree
                     Object oldVal = A.vals()[pos-1];
@@ -678,7 +684,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     Object[] vals = Arrays.copyOf(A.vals(), A.vals().length);
                     vals[pos-1] = value;
 
-                    A = new LeafNode(Arrays.copyOf(A.keys(), A.keys().length), vals, ((LeafNode)A).next);
+                    A = new LeafNode(Arrays.copyOf(A.keys(), A.keysLen()), vals, ((LeafNode)A).next);
                     assert(nodeLocks.get(current)==Thread.currentThread());
                     engine.update(current, A, nodeSerializer);
                     //already in here
@@ -711,7 +717,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }while(!found);
 
             // can be new item inserted into A without splitting it?
-            if(A.keys().length - (A.isLeaf()?2:1)<maxNodeSize){
+            if(A.keysLen() - (A.isLeaf()?2:1)<maxNodeSize){
                 int pos = findChildren(v, A.keys());
                 Object[] keys = arrayPut(A.keys(), pos, v);
 
@@ -940,10 +946,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             lock(nodeLocks, current);
             A = engine.get(current, nodeSerializer);
             int pos = findChildren(key, A.keys());
-            if(pos<A.keys().length&& key!=null && A.keys()[pos]!=null &&
+            if(pos<A.keysLen()&& key!=null && A.keys()[pos]!=null &&
                     0==comparator.compare(key,A.keys()[pos])){
                 //check for last node which was already deleted
-                if(pos == A.keys().length-1 && value == null){
+                if(pos == A.keysLen()-1 && value == null){
                     unlock(nodeLocks, current);
                     return null;
                 }
@@ -1292,7 +1298,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
     private Entry<K, V> findSmallerRecur(BNode n, K key, boolean inclusive) {
         final boolean leaf = n.isLeaf();
-        final int start = leaf ? n.keys().length-2 : n.keys().length-1;
+        final int start = leaf ? n.keysLen()-2 : n.keysLen()-1;
         final int end = leaf?1:0;
         final int res = inclusive? 1 : 0;
         for(int i=start;i>=end; i--){
@@ -1337,7 +1343,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }
 
             //iterate over keys to find last non null key
-            for(int i=n.keys().length-2; i>0;i--){
+            for(int i=n.keysLen()-2; i>0;i--){
                 Object k = n.keys()[i];
                 if(k!=null && n.vals().length>0) {
                     Object val = valExpand(n.vals()[i-1]);
