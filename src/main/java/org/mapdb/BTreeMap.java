@@ -269,6 +269,24 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             long[] child2 = arrayLongPut(child, pos, newChild);
             return new DirNode(keys2, child2);
         }
+
+        public DirNode cloneSplitRight(int pos, int splitPos, Object key, long newChild) {
+            final Object[] keys2 = arrayPut(keys, pos, key);
+            final long[] child2 = arrayLongPut(child, pos, newChild);
+            final int newLen = keysLen()+1;
+            //TODO optimize array allocation
+            return new DirNode(Arrays.copyOfRange(keys2, splitPos, newLen),
+                        Arrays.copyOfRange(child2, splitPos, newLen));
+
+        }
+
+        public DirNode cloneSplitLeft(int pos, int splitPos, Object key, long newChild, long nextNode) {
+            final Object[] keys2 = arrayPut(keys, pos, key);
+            final long[] child2 = arrayLongPut(child, pos, newChild);
+            long[] child3 = Arrays.copyOf(child2, splitPos+1);
+            child2[splitPos] = nextNode;
+            return new DirNode(Arrays.copyOf(keys2, splitPos+1), child3);
+        }
     }
 
 
@@ -346,6 +364,30 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             System.arraycopy(vals,0,vals2, 0, pos-1);
             System.arraycopy(vals, pos, vals2, pos-1, vals2.length-(pos-1));
             return new LeafNode(keys2,vals2,next);
+        }
+
+        public BNode cloneSplitRight(int pos, int splitPos, Object key, Object value) {
+            final Object[] keys2 = arrayPut(keys, pos, key);
+            final Object[] vals2 = arrayPut(vals, pos - 1, value);
+
+            //TODO optimize array allocation
+            Object[] vals3 = Arrays.copyOfRange(vals2, splitPos, vals2.length);
+            return new LeafNode(
+                    Arrays.copyOfRange(keys2, splitPos, keysLen() + 1),
+                    vals3,
+                    next);
+        }
+
+
+        public BNode cloneSplitLeft(int pos, int splitPos, Object key, Object value, long nextNode) {
+            final Object[] keys2 = arrayPut(keys, pos, key);
+            final Object[] vals2 = arrayPut(vals, pos-1, value);
+            Object[] keys3 = Arrays.copyOf(keys2, splitPos+2);
+            keys3[keys3.length-1] = keys3[keys3.length-2];
+            Object[] vals3 = Arrays.copyOf(vals2, splitPos);
+
+            //TODO check high/low keys overlap
+            return new LeafNode(keys3, vals3, nextNode);
         }
     }
 
@@ -790,34 +832,18 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }else{
                 //node is not safe, it requires splitting
                 final int pos = findChildren(v, A);
-                final Object[] keys = arrayPut(A.keysXX(), pos, v);
-                final Object[] vals = (A.isLeaf())? arrayPut(A.vals(), pos-1, value) : null;
-                final long[] child = A.isLeaf()? null : arrayLongPut(A.child(), pos, p);
-                final int splitPos = keys.length/2;
+                final int splitPos = (A.keysLen()+1)/2;
                 BNode B;
                 if(A.isLeaf()){
-                    Object[] vals2 = Arrays.copyOfRange(vals, splitPos, vals.length);
-
-                    B = new LeafNode(
-                                Arrays.copyOfRange(keys, splitPos, keys.length),
-                                vals2,
-                                ((LeafNode)A).next);
+                    B = ((LeafNode)A).cloneSplitRight(pos, splitPos, v, value);
                 }else{
-                    B = new DirNode(Arrays.copyOfRange(keys, splitPos, keys.length),
-                                Arrays.copyOfRange(child, splitPos, keys.length));
+                    B = ((DirNode)A).cloneSplitRight(pos, splitPos, v, p);
                 }
                 long q = engine.put(B, nodeSerializer);
                 if(A.isLeaf()){  //  splitPos+1 is there so A gets new high  value (key)
-                    Object[] keys2 = Arrays.copyOf(keys, splitPos+2);
-                    keys2[keys2.length-1] = keys2[keys2.length-2];
-                    Object[] vals2 = Arrays.copyOf(vals, splitPos);
-
-                    //TODO check high/low keys overlap
-                    A = new LeafNode(keys2, vals2, q);
+                    A = ((LeafNode)A).cloneSplitLeft(pos, splitPos, v, value,q);
                 }else{
-                    long[] child2 = Arrays.copyOf(child, splitPos+1);
-                    child2[splitPos] = q;
-                    A = new DirNode(Arrays.copyOf(keys, splitPos+1), child2);
+                    A = ((DirNode)A).cloneSplitLeft(pos, splitPos, v,p,q);
                 }
                 assert(nodeLocks.get(current)==Thread.currentThread());
                 engine.update(current, A, nodeSerializer);
