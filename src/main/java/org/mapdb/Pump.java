@@ -398,7 +398,10 @@ public final class Pump {
             boolean rightEdge = keys.get(keys.size()-1)==null;
             if(rightEdge)
                 keys.remove(keys.size()-1);
-            BTreeMap.LeafNode node = new BTreeMap.LeafNode(keys.toArray(),values.toArray() , nextNode,rightEdge);
+            boolean leftEdge = keys.get(0)==null;
+            if(leftEdge)
+                keys.remove(0);
+            BTreeMap.LeafNode node = new BTreeMap.LeafNode(keys.toArray(),values.toArray() , nextNode,leftEdge,rightEdge);
             nextNode = engine.put(node,nodeSerializer);
             K nextKey = keys.get(0);
             keys.clear();

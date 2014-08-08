@@ -29,7 +29,7 @@ public class BTreeMapTest{
     @Test public void test_leaf_node_serialization() throws IOException {
 
 
-        BTreeMap.LeafNode n = new BTreeMap.LeafNode(new Object[]{null,1,2,3}, new Object[]{1,2,3}, 111,true);
+        BTreeMap.LeafNode n = new BTreeMap.LeafNode(new Object[]{1,2,3}, new Object[]{1,2,3}, 111,true,true);
         BTreeMap.LeafNode n2 = (BTreeMap.LeafNode) UtilsTest.clone(n, m.nodeSerializer);
         assertArrayEquals(n.keysXX(), n2.keysXX());
         assertEquals(n.next, n2.next);
@@ -114,9 +114,9 @@ public class BTreeMapTest{
     @Test public void simple_root_get(){
 
         BTreeMap.LeafNode l = new BTreeMap.LeafNode(
-                new Object[]{null, 10,20,30},
                 new Object[]{10,20,30},
-                0,true);
+                new Object[]{10,20,30},
+                0,true,true);
         long rootRecid = engine.put(l, m.nodeSerializer);
         engine.update(m.rootRecidRef, rootRecid, Serializer.LONG);
 
@@ -137,9 +137,10 @@ public class BTreeMapTest{
         m.put(11,12);
         final long rootRecid = engine.get(m.rootRecidRef, Serializer.LONG);
         BTreeMap.LeafNode n = (BTreeMap.LeafNode) engine.get(rootRecid, m.nodeSerializer);
-        assertArrayEquals(new Object[]{null, 11}, n.keysXX());
+        assertArrayEquals(new Object[]{ 11}, n.keysXX());
         assertArrayEquals(new Object[]{12}, n.vals);
         assertEquals(0, n.next);
+        assertTrue(n.isLeaf() && n.isLeftEdge() && n.isRightEdge());
     }
 
     @Test public void batch_insert(){
