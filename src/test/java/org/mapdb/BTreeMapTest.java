@@ -31,7 +31,7 @@ public class BTreeMapTest{
 
         BTreeMap.LeafNode n = new BTreeMap.LeafNode(new Object[]{null,1,2,3, null}, new Object[]{1,2,3}, 111);
         BTreeMap.LeafNode n2 = (BTreeMap.LeafNode) UtilsTest.clone(n, m.nodeSerializer);
-        assertArrayEquals(n.keys(), n2.keys());
+        assertArrayEquals(n.keysXX(), n2.keysXX());
         assertEquals(n.next, n2.next);
     }
 
@@ -42,20 +42,22 @@ public class BTreeMapTest{
         BTreeMap.DirNode n = new BTreeMap.DirNode(new Object[]{1,2,3, null}, new long[]{4,5,6,7});
         BTreeMap.DirNode n2 = (BTreeMap.DirNode) UtilsTest.clone(n, m.nodeSerializer);
 
-        assertArrayEquals(n.keys(), n2.keys());
+        assertArrayEquals(n.keysXX(), n2.keysXX());
         assertArrayEquals(n.child, n2.child);
     }
 
     @Test public void test_find_children(){
 
-        assertEquals(8,m.findChildren(11, new Integer[]{1,2,3,4,5,6,7,8}));
-        assertEquals(0,m.findChildren(1, new Integer[]{1,2,3,4,5,6,7,8}));
-        assertEquals(0,m.findChildren(0, new Integer[]{1,2,3,4,5,6,7,8}));
-        assertEquals(7,m.findChildren(8, new Integer[]{1,2,3,4,5,6,7,8}));
-        assertEquals(4,m.findChildren(49, new Integer[]{10,20,30,40,50}));
-        assertEquals(4,m.findChildren(50, new Integer[]{10,20,30,40,50}));
-        assertEquals(3,m.findChildren(40, new Integer[]{10,20,30,40,50}));
-        assertEquals(3,m.findChildren(39, new Integer[]{10,20,30,40,50}));
+        BTreeMap.DirNode n  =new BTreeMap.DirNode(new Integer[]{1,2,3,4,5,6,7,8}, new long[0]);
+        assertEquals(8,m.findChildren(11, n));
+        assertEquals(0,m.findChildren(1, n));
+        assertEquals(0,m.findChildren(0, n));
+        assertEquals(7,m.findChildren(8, n));
+        n  =new BTreeMap.DirNode(new Integer[]{10,20,30,40,50}, new long[0]);
+        assertEquals(4,m.findChildren(49, n));
+        assertEquals(4,m.findChildren(50, n));
+        assertEquals(3,m.findChildren(40, n));
+        assertEquals(3,m.findChildren(39, n));
     }
 
 
@@ -135,7 +137,7 @@ public class BTreeMapTest{
         m.put(11,12);
         final long rootRecid = engine.get(m.rootRecidRef, Serializer.LONG);
         BTreeMap.LeafNode n = (BTreeMap.LeafNode) engine.get(rootRecid, m.nodeSerializer);
-        assertArrayEquals(new Object[]{null, 11, null}, n.keys);
+        assertArrayEquals(new Object[]{null, 11, null}, n.keysXX());
         assertArrayEquals(new Object[]{12}, n.vals);
         assertEquals(0, n.next);
     }
