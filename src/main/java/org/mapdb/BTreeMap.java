@@ -213,6 +213,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         long next();
 
         int keysLen();
+
+        void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException;
     }
 
     public final static class DirNode implements BNode{
@@ -253,6 +255,14 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public boolean isRightEdge(){return rightEdge;}
 
         @Override public int keysLen(){return keys.length;}
+
+        @Override
+        public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
+
+            keySerializer.serialize(out,isLeftEdge()?1:0,
+                    isRightEdge()?keys.length-1:keys.length,
+                    keys);
+        }
 
         public BNode cloneExpand(int pos, Object key, long newChild) {
             Object[] keys2 = arrayPut(keys, pos, key);
@@ -304,6 +314,14 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
 
         @Override public int keysLen(){return keys.length;}
+
+        @Override
+        public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
+
+            keySerializer.serialize(out,isLeftEdge()?1:0,
+                    isRightEdge()?keys.length-1:keys.length,
+                    keys);
+        }
 
         public LeafNode cloneUpdateVal(int pos, Object value) {
             Object[] vals2 = vals.clone();
@@ -401,10 +419,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     DataIO.packLong(out, child);
             }
 
-
-            keySerializer.serialize(out,value.isLeftEdge()?1:0,
-                    value.isRightEdge()?value.keysLen()-1:value.keysLen(),
-                    value.keysXX());
+            value.serializeKeys(out, keySerializer);
 
             if(isLeaf){
                 if(hasValues){
