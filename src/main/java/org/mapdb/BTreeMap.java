@@ -117,8 +117,6 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     /** Serializer used to convert keys from/into binary form*/
     protected final Serializer<V> valueSerializer;
 
-    /** keys are sorted by this*/
-    protected final Comparator comparator;
 
     /** holds node level locks*/
     protected final LongConcurrentHashMap<Thread> nodeLocks = new LongConcurrentHashMap<Thread>();
@@ -160,7 +158,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 return Collections.unmodifiableSortedMap(new TreeMap<String, Object>());
 
             NodeSerializer rootSerializer = new NodeSerializer(false,BTreeKeySerializer.STRING,
-                    db.getDefaultSerializer(), Fun.COMPARATOR_NON_NULL, 0);
+                    db.getDefaultSerializer(), 0);
             BNode root = new LeafNode(new Object[]{}, new Object[]{}, 0,true,true);
             rootRef = db.getEngine().put(root, rootSerializer);
             db.getEngine().update(Engine.CATALOG_RECID,rootRef, Serializer.LONG);
@@ -169,7 +167,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         return new BTreeMap<String, Object>(db.engine,Engine.CATALOG_RECID,32,false,0,
                 BTreeKeySerializer.STRING,
                 db.getDefaultSerializer(),
-                Fun.COMPARATOR_NON_NULL,0, false);
+                0, false);
     }
 
 
@@ -275,7 +273,6 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         @Override
         public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
-
             keySerializer.serialize(out, 0,
                     keys.length,
                     keys);
@@ -432,17 +429,14 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         protected final boolean valsOutsideNodes;
         protected final BTreeKeySerializer keySerializer;
         protected final Serializer<Object> valueSerializer;
-        protected final Comparator comparator;
         protected final int numberOfNodeMetas;
 
-        public NodeSerializer(boolean valsOutsideNodes, BTreeKeySerializer keySerializer, Serializer valueSerializer, Comparator comparator, int numberOfNodeMetas) {
+        public NodeSerializer(boolean valsOutsideNodes, BTreeKeySerializer keySerializer, Serializer valueSerializer, int numberOfNodeMetas) {
             assert(keySerializer!=null);
-            assert(comparator!=null);
             this.hasValues = valueSerializer!=null;
             this.valsOutsideNodes = valsOutsideNodes;
             this.keySerializer = keySerializer;
             this.valueSerializer = valueSerializer;
-            this.comparator = comparator;
             this.numberOfNodeMetas = numberOfNodeMetas;
         }
 
@@ -597,44 +591,32 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
      * @param counterRecid recid under which `Atomic.Long` is stored, or `0` for no counter
      * @param keySerializer Serializer used for keys. May be null for default value.
      * @param valueSerializer Serializer used for values. May be null for default value
-     * @param comparator Comparator to sort keys in this BTree, may be null.
      * @param numberOfNodeMetas number of meta records associated with each BTree node
      * @param disableLocks makes class thread-unsafe but bit faster
      */
     public BTreeMap(Engine engine, long rootRecidRef,int maxNodeSize, boolean valsOutsideNodes, long counterRecid,
-                    BTreeKeySerializer<K> keySerializer, Serializer<V> valueSerializer, Comparator<K> comparator,
+                    BTreeKeySerializer keySerializer, Serializer<V> valueSerializer,
                     int numberOfNodeMetas, boolean disableLocks) {
         if(maxNodeSize%2!=0) throw new IllegalArgumentException("maxNodeSize must be dividable by 2");
         if(maxNodeSize<6) throw new IllegalArgumentException("maxNodeSize too low");
         if((maxNodeSize& SIZE_MASK) !=maxNodeSize) throw new IllegalArgumentException("maxNodeSize too high");
         if(rootRecidRef<=0||counterRecid<0 || numberOfNodeMetas<0) throw new IllegalArgumentException();
         if(keySerializer==null) throw new NullPointerException();
-        if(comparator==null) throw new NullPointerException();
         SerializerBase.assertSerializable(keySerializer);
         SerializerBase.assertSerializable(valueSerializer);
-        SerializerBase.assertSerializable(comparator);
-
-
 
         this.rootRecidRef = rootRecidRef;
         this.hasValues = valueSerializer!=null;
         this.valsOutsideNodes = valsOutsideNodes;
         this.engine = engine;
         this.maxNodeSize = maxNodeSize;
-        this.comparator = comparator;
         this.numberOfNodeMetas = numberOfNodeMetas;
-
-        {
-            Comparator requiredComparator = keySerializer.getComparator();
-            if(requiredComparator!=null && !requiredComparator.equals(comparator))
-                throw new IllegalArgumentException("KeySerializers requires its own comparator");
-        }
 
         this.keySerializer = keySerializer;
         this.valueSerializer = valueSerializer;
 
 
-        this.nodeSerializer = new NodeSerializer(valsOutsideNodes,keySerializer,valueSerializer,comparator,numberOfNodeMetas);
+        this.nodeSerializer = new NodeSerializer(valsOutsideNodes,keySerializer,valueSerializer,numberOfNodeMetas);
 
         this.keySet = new KeySet(this, hasValues);
 
@@ -660,10 +642,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     }
 
     /** creates empty root node and returns recid of its reference*/
-    static protected long createRootRef(Engine engine, BTreeKeySerializer keySer, Serializer valueSer, Comparator comparator, int numberOfNodeMetas){
+    static protected long createRootRef(Engine engine, BTreeKeySerializer keySer, Serializer valueSer, int numberOfNodeMetas){
         final LeafNode emptyRoot = new LeafNode(new Object[]{}, new Object[]{}, 0,true,true);
         //empty root is serializer simpler way, so we can use dummy values
-        long rootRecidVal = engine.put(emptyRoot,  new NodeSerializer(false,keySer, valueSer, comparator, numberOfNodeMetas));
+        long rootRecidVal = engine.put(emptyRoot,  new NodeSerializer(false,keySer, valueSer, numberOfNodeMetas));
         return engine.put(rootRecidVal,Serializer.LONG);
     }
 
@@ -1338,7 +1320,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
     @Override
     public Comparator<? super K> comparator() {
-        return comparator;
+        return keySerializer.comparator();
     }
 
 
@@ -2830,7 +2812,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         return new BTreeMap<K, V>(snapshot, rootRecidRef, maxNodeSize, valsOutsideNodes,
                 counter==null?0L:counter.recid,
-                keySerializer, valueSerializer, comparator, numberOfNodeMetas, false);
+                keySerializer, valueSerializer, numberOfNodeMetas, false);
     }
 
 

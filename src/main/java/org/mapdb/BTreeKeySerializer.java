@@ -51,6 +51,8 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
 
     public static final BTreeKeySerializer BASIC = new BTreeKeySerializer.BasicKeySerializer(Serializer.BASIC, Fun.COMPARATOR_NON_NULL);
 
+    public abstract Comparator comparator();
+
     /**
      * Basic Key Serializer which just writes data without applying any compression.
      * Is used by default if no other Key Serializer is specified.
@@ -104,6 +106,11 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Object getKey(Object[] keys, int pos) {
             return keys[pos];
         }
+
+        @Override
+        public Comparator comparator() {
+            return comparator;
+        }
     }
 
 
@@ -150,6 +157,11 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Long getKey(long[] keys, int pos) {
             return new Long(keys[pos]);
         }
+
+        @Override
+        public Comparator comparator() {
+            return Fun.COMPARATOR_NON_NULL;
+        }
     };
 
     /**
@@ -194,6 +206,12 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Integer getKey(int[] keys, int pos) {
             return new Integer(keys[pos]);
         }
+
+        @Override
+        public Comparator comparator() {
+            return Fun.COMPARATOR_NON_NULL;
+        }
+
     };
 
 
@@ -289,6 +307,12 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
             int end1 = keys.offsets[pos];
             return String.valueOf(keys.chars,start1, end1-start1);
         }
+
+        @Override
+        public Comparator comparator() {
+            return Fun.COMPARATOR_NON_NULL;
+        }
+
     };
 
     /**
@@ -488,6 +512,12 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public int hashCode() {
             return aComparator.hashCode() + bComparator.hashCode() + aSerializer.hashCode() + bSerializer.hashCode();
         }
+
+        @Override
+        public Comparator comparator() {
+            return comparator;
+        }
+
     }
 
     /**
@@ -592,7 +622,6 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
                 bcount--;
             }
 
-
         }
 
         @Override
@@ -662,6 +691,12 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
             return aComparator.hashCode()+ bComparator.hashCode() + cComparator.hashCode()
                     +aSerializer.hashCode() + bSerializer.hashCode()+cSerializer.hashCode();
         }
+
+        @Override
+        public Comparator comparator() {
+            return comparator;
+        }
+
     }
 
     /**
@@ -873,6 +908,12 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
                     +aSerializer.hashCode() + bSerializer.hashCode()+cSerializer.hashCode() + dSerializer.hashCode();
 
         }
+
+        @Override
+        public Comparator comparator() {
+            return comparator;
+        }
+
     }
 
 
@@ -1101,6 +1142,12 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
                     +aSerializer.hashCode() + bSerializer.hashCode()+cSerializer.hashCode() + dSerializer.hashCode()
                     +eSerializer.hashCode();
         }
+
+        @Override
+        public Comparator comparator() {
+            return comparator;
+        }
+
     }
 
     /**
@@ -1363,6 +1410,12 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
                     +aSerializer.hashCode() + bSerializer.hashCode()+cSerializer.hashCode() + dSerializer.hashCode()
                     +eSerializer.hashCode() + fSerializer.hashCode();
         }
+
+        @Override
+        public Comparator comparator() {
+            return comparator;
+        }
+
     }
 
 
