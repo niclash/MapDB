@@ -161,7 +161,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             NodeSerializer rootSerializer = new NodeSerializer(false,BTreeKeySerializer.STRING,
                     db.getDefaultSerializer(), Fun.COMPARATOR_NON_NULL, 0);
-            BNode root = new LeafNode(new Object[]{null, null}, new Object[]{}, 0);
+            BNode root = new LeafNode(new Object[]{}, new Object[]{}, 0,true,true);
             rootRef = db.getEngine().put(root, rootSerializer);
             db.getEngine().update(Engine.CATALOG_RECID,rootRef, Serializer.LONG);
             db.getEngine().commit();
@@ -203,37 +203,61 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     /** common interface for BTree node */
     public interface BNode{
         boolean isLeaf();
-        Object[] keys();
+        boolean isLeftEdge();
+        boolean isRightEdge();
+        Object key(int index);
         Object[] vals();
         Object highKey();
         long[] child();
         long next();
+
+        int keysLen();
+
+        void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException;
     }
 
     public final static class DirNode implements BNode{
-        final Object[] keys;
+        private final Object[] keys;
         final long[] child;
+        final boolean leftEdge;
+        final boolean rightEdge;
 
-        DirNode(Object[] keys, long[] child) {
+        DirNode(Object[] keys, long[] child, boolean leftEdge, boolean rightEdge) {
             this.keys = keys;
             this.child = child;
+            this.leftEdge = leftEdge;
+            this.rightEdge = rightEdge;
+
+            assert(keys.length==0||keys[0]!=null);
+            assert(keys.length<2||keys[keys.length-1]!=null);
+            assert(keys.length==child.length-(leftEdge?1:0)-(rightEdge?1:0));
         }
 
-        DirNode(Object[] keys, List<Long> child) {
-            this.keys = keys;
-            this.child = new long[child.size()];
-            for(int i=0;i<child.size();i++){
-                this.child[i] = child.get(i);
-            }
-        }
 
 
         @Override public boolean isLeaf() { return false;}
 
-        @Override public Object[] keys() { return keys;}
+        public Object[] keysXX() { return keys;}
+
+        @Override public Object key(int index){
+            if(rightEdge && index==keysLen()-1)
+                return null;
+            if(leftEdge){
+                if(index==0)
+                    return null;
+                index--;
+            }
+
+            return keys[index];
+        }
+
         @Override public Object[] vals() { return null;}
 
-        @Override public Object highKey() {return keys[keys.length-1];}
+        @Override public Object highKey() {
+            if(rightEdge)
+                return null;
+            return keys[keys.length-1];
+        }
 
         @Override public long[] child() { return child;}
 
@@ -242,34 +266,160 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public String toString(){
             return "Dir(K"+Arrays.toString(keys)+", C"+Arrays.toString(child)+")";
         }
+        @Override public boolean isLeftEdge(){return leftEdge;}
+        @Override public boolean isRightEdge(){return rightEdge;}
 
+        @Override public int keysLen(){
+            return keys.length + (rightEdge?1:0)+ (leftEdge?1:0);
+        }
+
+        @Override
+        public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
+
+            keySerializer.serialize(out, 0,
+                    keys.length,
+                    keys);
+        }
+
+        public BNode cloneExpand(int pos, Object key, long newChild) {
+            Object[] keys2 = arrayPut(keys, pos-(leftEdge?1:0), key);
+            long[] child2 = arrayLongPut(child, pos, newChild);
+            return new DirNode(keys2, child2,leftEdge,rightEdge);
+        }
+
+        public DirNode cloneSplitRight(int pos, int splitPos, Object key, long newChild) {
+            final Object[] keys2 = arrayPut(keys, pos-(leftEdge?1:0), key);
+            final long[] child2 = arrayLongPut(child, pos, newChild);
+
+            //TODO optimize array allocation
+            return new DirNode(Arrays.copyOfRange(keys2, splitPos-(leftEdge?1:0), keys2.length),
+                        Arrays.copyOfRange(child2, splitPos, child2.length),false,rightEdge);
+
+        }
+
+        public DirNode cloneSplitLeft(int pos, int splitPos, Object key, long newChild, long nextNode) {
+            final Object[] keys2 = arrayPut(keys, pos-(leftEdge?1:0), key);
+            final long[] child2 = arrayLongPut(child, pos, newChild);
+            long[] child3 = Arrays.copyOf(child2, splitPos+1);
+            child2[splitPos] = nextNode;
+            //TODO optimize array allocation
+            return new DirNode(Arrays.copyOf(keys2, splitPos+1-(leftEdge?1:0)), child3,leftEdge,false);
+        }
     }
 
 
     public final static class LeafNode implements BNode{
-        final Object[] keys;
+        private final Object[] keys;
         final Object[] vals;
         final long next;
+        final boolean leftEdge;
+        final boolean rightEdge;
 
-        LeafNode(Object[] keys, Object[] vals, long next) {
+        LeafNode(Object[] keys, Object[] vals, long next, boolean leftEdge, boolean rightEdge) {
             this.keys = keys;
             this.vals = vals;
             this.next = next;
-            assert(vals==null||keys.length == vals.length+2);
+            this.leftEdge = leftEdge;
+            this.rightEdge = rightEdge;
+
+
+            assert(keys.length==0||keys[0]!=null);
+            assert(keys.length<2||keys[keys.length-1]!=null);
+            assert(vals==null||keys.length == vals.length +(leftEdge?0:1) +(rightEdge?0:1));
         }
 
         @Override public boolean isLeaf() { return true;}
 
-        @Override public Object[] keys() { return keys;}
+        public Object[] keysXX() { return keys;}
+
+        @Override public Object key(int index){
+            if(rightEdge && index==keysLen()-1)
+                return null;
+            if(leftEdge){
+                if(index==0)
+                    return null;
+                index--;
+            }
+
+            return keys[index];
+        }
+
         @Override public Object[] vals() { return vals;}
 
-        @Override public Object highKey() {return keys[keys.length-1];}
+        @Override public Object highKey() {return rightEdge? null : keys[keys.length-1];}
 
         @Override public long[] child() { return null;}
         @Override public long next() {return next;}
 
         @Override public String toString(){
             return "Leaf(K"+Arrays.toString(keys)+", V"+Arrays.toString(vals)+", L="+next+")";
+        }
+
+
+        @Override public boolean isLeftEdge(){return leftEdge;}
+        @Override public boolean isRightEdge(){return rightEdge;}
+
+
+        @Override public int keysLen(){return keys.length + (rightEdge?1:0)+ (leftEdge?1:0);}
+
+        @Override
+        public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
+
+            keySerializer.serialize(out,0,
+                    keys.length,
+                    keys);
+        }
+
+        public LeafNode cloneUpdateVal(int pos, Object value) {
+            Object[] vals2 = vals.clone();
+            vals2[pos] = value;
+            return new LeafNode(keys, vals2, next,leftEdge,rightEdge);
+        }
+
+        public LeafNode cloneExpand(int pos, Object key, Object value) {
+            Object[] keys2 = arrayPut(keys, pos-(leftEdge?1:0), key);
+            Object[] vals2 = arrayPut(vals, pos-1, value);
+            return new LeafNode(keys2, vals2, next,leftEdge,rightEdge);
+
+        }
+
+        public LeafNode cloneRemove(int pos) {
+            int kpos = pos-(leftEdge?1:0);
+            Object[] keys2 = new Object[keys.length-1];
+            System.arraycopy(keys,0,keys2, 0, kpos);
+            System.arraycopy(keys, kpos+1, keys2, kpos, keys2.length-kpos);
+
+            Object[] vals2 = new Object[vals.length-1];
+            System.arraycopy(vals,0,vals2, 0, pos-1);
+            System.arraycopy(vals, pos, vals2, pos-1, vals2.length-(pos-1));
+            return new LeafNode(keys2,vals2,next,leftEdge,rightEdge);
+        }
+
+        public BNode cloneSplitRight(int pos, int splitPos, Object key, Object value) {
+            final Object[] keys2 = arrayPut(keys, pos-(leftEdge?1:0), key);
+            final Object[] vals2 = arrayPut(vals, pos - 1, value);
+
+            //TODO optimize array allocation
+            Object[] keys3 = Arrays.copyOfRange(keys2, splitPos-(leftEdge?1:0), keys2.length);
+            Object[] vals3 = Arrays.copyOfRange(vals2, splitPos, vals2.length);
+
+            return new LeafNode(
+                    keys3,
+                    vals3,
+                    next,false,rightEdge);
+        }
+
+
+        public BNode cloneSplitLeft(int pos, int splitPos, Object key, Object value, long nextNode) {
+            final Object[] keys2 = arrayPut(keys, pos-(leftEdge?1:0), key);
+            final Object[] vals2 = arrayPut(vals, pos-1, value);
+            Object[] keys3 = Arrays.copyOf(keys2, splitPos+2-(leftEdge?1:0));
+            keys3[keys3.length-1] = keys3[keys3.length-2];
+            Object[] vals3 = Arrays.copyOf(vals2, splitPos);
+            //TODO optimize array allocation
+
+            //TODO check high/low keys overlap
+            return new LeafNode(keys3, vals3, nextNode,leftEdge,false);
         }
     }
 
@@ -301,18 +451,18 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             final boolean isLeaf = value.isLeaf();
 
             //first byte encodes if is leaf (first bite) and length (last seven bites)
-            assert(value.keys().length<=255);
-            assert(!(!isLeaf && value.child().length!= value.keys().length));
-            assert(!(isLeaf && hasValues && value.vals().length!= value.keys().length-2));
+            assert(value.keysLen()<=255);
+            assert(!(!isLeaf && value.child().length!= value.keysLen())): value.toString();
+            assert(!(isLeaf && hasValues && value.vals().length!= value.keysLen()-2));
             assert(!(!isLeaf && value.highKey()!=null && value.child()[value.child().length-1]==0));
 
             //check node integrity in paranoid mode
             if(CC.PARANOID){
-                int len = value.keys().length;
-                for(int i=value.keys()[0]==null?2:1;
-                  i<(value.keys()[len-1]==null?len-1:len);
+                int len = value.keysLen();
+                for(int i=value.key(0)==null?2:1;
+                  i<(value.key(len-1)==null?len-1:len);
                   i++){
-                    int comp = comparator.compare(value.keys()[i-1], value.keys()[i]);
+                    int comp = comparator.compare(value.key(i-1), value.key(i));
                     int limit = i==len-1 ? 1:0 ;
                     if(comp>=limit){
                         throw new AssertionError("BTreeNode format error, wrong key order at #"+i+"\n"+value);
@@ -322,15 +472,11 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }
 
 
-            final boolean left = value.keys()[0] == null;
-            final boolean right = value.keys()[value.keys().length-1] == null;
-
-
             final int header =
                 (isLeaf ? LEAF_MASK : 0) |
-                (left ? LEFT_MASK : 0) |
-                (right ? RIGHT_MASK : 0) |
-                value.keys().length;
+                (value.isLeftEdge() ? LEFT_MASK : 0) |
+                (value.isRightEdge() ? RIGHT_MASK : 0) |
+                value.keysLen();
 
             out.writeShort(header);
 
@@ -347,10 +493,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     DataIO.packLong(out, child);
             }
 
-
-            keySerializer.serialize(out,left?1:0,
-                    right?value.keys().length-1:value.keys().length,
-                    value.keys());
+            value.serializeKeys(out, keySerializer);
 
             if(isLeaf){
                 if(hasValues){
@@ -390,33 +533,32 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             //first bite indicates leaf
             final boolean isLeaf = ((header& LEAF_MASK) != 0);
-            final int start =((header& LEFT_MASK) != 0) ?
-                1:0;
-
-            final int end = ((header& RIGHT_MASK) != 0) ?
-                size-1:size;
-
+            final boolean leftEdge = ((header& LEFT_MASK) != 0);
+            final boolean rightEdge = ((header& RIGHT_MASK) != 0);
 
             if(isLeaf){
-                return deserializeLeaf(in, size, start, end);
+                return deserializeLeaf(in, size, leftEdge, rightEdge);
             }else{
-                return deserializeDir(in, size, start, end);
+                return deserializeDir(in, size, leftEdge, rightEdge);
             }
         }
 
-        private BNode deserializeDir(final DataInput in, final int size, final int start, final int end) throws IOException {
+        private BNode deserializeDir(final DataInput in, final int size, final boolean leftEdge, final boolean rightEdge) throws IOException {
             final long[] child = new long[size];
             for(int i=0;i<size;i++)
                 child[i] = DataIO.unpackLong(in);
-            final Object[] keys = keySerializer.deserialize(in, start,end,size);
-            assert(keys.length==size);
-            return new DirNode(keys, child);
+
+            int arrayLen = size -(rightEdge?1:0)-(leftEdge?1:0);
+            final Object[] keys = keySerializer.deserialize(in, 0,arrayLen,arrayLen);
+            assert(keys.length==size-(leftEdge?1:0)-(rightEdge?1:0));
+            return new DirNode(keys, child,leftEdge,rightEdge);
         }
 
-        private BNode deserializeLeaf(final DataInput in, final int size, final int start, final int end) throws IOException {
+        private BNode deserializeLeaf(final DataInput in, final int size, final boolean leftEdge, final boolean rightEdge) throws IOException {
             final long next = DataIO.unpackLong(in);
-            final Object[] keys = keySerializer.deserialize(in, start, end, size);
-            assert(keys.length==size);
+            int arrayLen = size -(rightEdge?1:0)-(leftEdge?1:0);
+            final Object[] keys = keySerializer.deserialize(in, 0, arrayLen , arrayLen);
+            assert(keys.length==arrayLen);
             Object[] vals = new Object[size-2];
             if(hasValues){
                 for(int i=0;i<vals.length;i++){
@@ -435,7 +577,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                         vals[i]=EMPTY;
                 }
             }
-            return new LeafNode(keys, vals, next);
+            return new LeafNode(keys, vals, next,leftEdge,rightEdge);
         }
 
         @Override
@@ -519,7 +661,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
     /** creates empty root node and returns recid of its reference*/
     static protected long createRootRef(Engine engine, BTreeKeySerializer keySer, Serializer valueSer, Comparator comparator, int numberOfNodeMetas){
-        final LeafNode emptyRoot = new LeafNode(new Object[]{null, null}, new Object[]{}, 0);
+        final LeafNode emptyRoot = new LeafNode(new Object[]{}, new Object[]{}, 0,true,true);
         //empty root is serializer simpler way, so we can use dummy values
         long rootRecidVal = engine.put(emptyRoot,  new NodeSerializer(false,keySer, valueSer, comparator, numberOfNodeMetas));
         return engine.put(rootRecidVal,Serializer.LONG);
@@ -531,18 +673,18 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
      * Find the first children node with a key equal or greater than the given key.
      * If all items are smaller it returns `keys.length`
      */
-    protected final int findChildren(final Object key, final Object[] keys) {
+    protected final int findChildren(final Object key, final BNode node) {
         int left = 0;
-        if(keys[0] == null) left++;
-        int right = keys[keys.length-1] == null ? keys.length-1 :  keys.length;
+        if(node.key(0) == null) left++;
+        int right = node.key(node.keysLen()-1) == null ? node.keysLen()-1 :  node.keysLen();
 
         int middle;
 
         // binary search
         while (true) {
             middle = (left + right) / 2;
-            if(keys[middle]==null) return middle; //null is positive infinitive
-            if (comparator.compare(keys[middle], key) < 0) {
+            if(node.key(middle)==null) return middle; //null is positive infinitive
+            if (comparator.compare(node.key(middle), key) < 0) {
                 left = middle + 1;
             } else {
                 right = middle;
@@ -574,18 +716,18 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         //now at leaf level
         LeafNode leaf = (LeafNode) A;
-        int pos = findChildren(v, leaf.keys);
-        while(pos == leaf.keys.length){
+        int pos = findChildren(v, leaf);
+        while(pos == leaf.keysLen()){
             //follow next link on leaf until necessary
             leaf = (LeafNode) engine.get(leaf.next, nodeSerializer);
-            pos = findChildren(v, leaf.keys);
+            pos = findChildren(v, leaf);
         }
 
-        if(pos==leaf.keys.length-1){
+        if(pos==leaf.keysLen()-1){
             return null; //last key is always deleted
         }
         //finish search
-        if(leaf.keys[pos]!=null && 0==comparator.compare(v,leaf.keys[pos])){
+        if(leaf.key(pos)!=null && 0==comparator.compare(v,leaf.key(pos))){
             Object ret = leaf.vals[pos-1];
             return expandValue ? valExpand(ret) : ret;
         }else
@@ -601,7 +743,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     }
 
     protected final long nextDir(DirNode d, Object key) {
-        int pos = findChildren(key, d.keys) - 1;
+        int pos = findChildren(key, d) - 1;
         if(pos<0) pos = 0;
         return d.child[pos];
     }
@@ -656,10 +798,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 lock(nodeLocks, current);
                 found = true;
                 A = engine.get(current, nodeSerializer);
-                int pos = findChildren(v, A.keys());
+                int pos = findChildren(v, A);
                 //check if keys is already in tree
-                if(pos<A.keys().length-1 &&  v!=null && A.keys()[pos]!=null &&
-                        0==comparator.compare(v,A.keys()[pos])){
+                if(pos<A.keysLen()-1 &&  v!=null && A.key(pos)!=null &&
+                        0==comparator.compare(v,A.key(pos))){
                     //yes key is already in tree
                     Object oldVal = A.vals()[pos-1];
                     if(putOnlyIfAbsent){
@@ -668,11 +810,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                         if(CC.PARANOID) assertNoLocks(nodeLocks);
                         return valExpand(oldVal);
                     }
-                    //insert new
-                    Object[] vals = Arrays.copyOf(A.vals(), A.vals().length);
-                    vals[pos-1] = value;
 
-                    A = new LeafNode(Arrays.copyOf(A.keys(), A.keys().length), vals, ((LeafNode)A).next);
+                    A = ((LeafNode)A).cloneUpdateVal(pos-1, value);
                     assert(nodeLocks.get(current)==Thread.currentThread());
                     engine.update(current, A, nodeSerializer);
                     //already in here
@@ -688,15 +827,15 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     //follow link until necessary
                     unlock(nodeLocks, current);
                     found = false;
-                    int pos2 = findChildren(v, A.keys());
-                    while(A!=null && pos2 == A.keys().length){
+                    int pos2 = findChildren(v, A);
+                    while(A!=null && pos2 == A.keysLen()){
                         //TODO lock?
                         long next = A.next();
 
                         if(next==0) break;
                         current = next;
                         A = engine.get(current, nodeSerializer);
-                        pos2 = findChildren(v, A.keys());
+                        pos2 = findChildren(v, A);
                     }
 
                 }
@@ -705,22 +844,17 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }while(!found);
 
             // can be new item inserted into A without splitting it?
-            if(A.keys().length - (A.isLeaf()?2:1)<maxNodeSize){
-                int pos = findChildren(v, A.keys());
-                Object[] keys = arrayPut(A.keys(), pos, v);
-
+            if(A.keysLen() - (A.isLeaf()?2:1)<maxNodeSize){
+                int pos = findChildren(v, A);
+                BNode n;
                 if(A.isLeaf()){
-                    Object[] vals = arrayPut(A.vals(), pos-1, value);
-                    LeafNode n = new LeafNode(keys, vals, ((LeafNode)A).next);
-                    assert(nodeLocks.get(current)==Thread.currentThread());
-                    engine.update(current, n, nodeSerializer);
+                    n = ((LeafNode)A).cloneExpand(pos, v, value);
                 }else{
                     assert(p!=0);
-                    long[] child = arrayLongPut(A.child(), pos, p);
-                    DirNode d = new DirNode(keys, child);
-                    assert(nodeLocks.get(current)==Thread.currentThread());
-                    engine.update(current, d, nodeSerializer);
+                    n = ((DirNode)A).cloneExpand(pos,v,p);
                 }
+                assert(nodeLocks.get(current)==Thread.currentThread());
+                engine.update(current, n, nodeSerializer);
 
                 notify(key,  null, value2);
                 unlock(nodeLocks, current);
@@ -728,35 +862,19 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 return null;
             }else{
                 //node is not safe, it requires splitting
-                final int pos = findChildren(v, A.keys());
-                final Object[] keys = arrayPut(A.keys(), pos, v);
-                final Object[] vals = (A.isLeaf())? arrayPut(A.vals(), pos-1, value) : null;
-                final long[] child = A.isLeaf()? null : arrayLongPut(A.child(), pos, p);
-                final int splitPos = keys.length/2;
+                final int pos = findChildren(v, A);
+                final int splitPos = (A.keysLen()+1)/2;
                 BNode B;
                 if(A.isLeaf()){
-                    Object[] vals2 = Arrays.copyOfRange(vals, splitPos, vals.length);
-
-                    B = new LeafNode(
-                                Arrays.copyOfRange(keys, splitPos, keys.length),
-                                vals2,
-                                ((LeafNode)A).next);
+                    B = ((LeafNode)A).cloneSplitRight(pos, splitPos, v, value);
                 }else{
-                    B = new DirNode(Arrays.copyOfRange(keys, splitPos, keys.length),
-                                Arrays.copyOfRange(child, splitPos, keys.length));
+                    B = ((DirNode)A).cloneSplitRight(pos, splitPos, v, p);
                 }
                 long q = engine.put(B, nodeSerializer);
                 if(A.isLeaf()){  //  splitPos+1 is there so A gets new high  value (key)
-                    Object[] keys2 = Arrays.copyOf(keys, splitPos+2);
-                    keys2[keys2.length-1] = keys2[keys2.length-2];
-                    Object[] vals2 = Arrays.copyOf(vals, splitPos);
-
-                    //TODO check high/low keys overlap
-                    A = new LeafNode(keys2, vals2, q);
+                    A = ((LeafNode)A).cloneSplitLeft(pos, splitPos, v, value,q);
                 }else{
-                    long[] child2 = Arrays.copyOf(child, splitPos+1);
-                    child2[splitPos] = q;
-                    A = new DirNode(Arrays.copyOf(keys, splitPos+1), child2);
+                    A = ((DirNode)A).cloneSplitLeft(pos, splitPos, v,p,q);
                 }
                 assert(nodeLocks.get(current)==Thread.currentThread());
                 engine.update(current, A, nodeSerializer);
@@ -774,9 +892,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                       }
                     assert(current>0);
                 }else{
-                    BNode R = new DirNode(
-                            new Object[]{A.keys()[0], A.highKey(), B.isLeaf()?null:B.highKey()},
-                            new long[]{current,q, 0});
+                    BNode R =
+                            new DirNode(
+                                new Object[]{A.highKey()},
+                                new long[]{current,q, 0},true,true);
 
                     lock(nodeLocks, rootRecidRef);
                     unlock(nodeLocks, current);
@@ -836,7 +955,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             this.hiInclusive = hiInclusive;
             if(hi!=null && currentLeaf!=null){
                 //check in bounds
-                Object key =  currentLeaf.keys[currentPos];
+                Object key =  currentLeaf.key(currentPos);
                 int c = m.comparator.compare(key, hi);
                 if (c > 0 || (c == 0 && !hiInclusive)){
                     //out of high bound
@@ -858,7 +977,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             currentLeaf = (LeafNode) node;
             currentPos = 1;
 
-            while(currentLeaf.keys.length==2){
+            while(currentLeaf.keysLen()==2){
                 //follow link until leaf is not empty
                 if(currentLeaf.next == 0){
                     currentLeaf = null;
@@ -881,9 +1000,9 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         protected void advance(){
             if(currentLeaf==null) return;
-            lastReturnedKey =  currentLeaf.keys[currentPos];
+            lastReturnedKey =  currentLeaf.key(currentPos);
             currentPos++;
-            if(currentPos == currentLeaf.keys.length-1){
+            if(currentPos == currentLeaf.keysLen()-1){
                 //move to next leaf
                 if(currentLeaf.next==0){
                     currentLeaf = null;
@@ -892,7 +1011,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 }
                 currentPos = 1;
                 currentLeaf = (LeafNode) m.engine.get(currentLeaf.next, m.nodeSerializer);
-                while(currentLeaf.keys.length==2){
+                while(currentLeaf.keysLen()==2){
                     if(currentLeaf.next ==0){
                         currentLeaf = null;
                         currentPos=-1;
@@ -903,7 +1022,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }
             if(hi!=null && currentLeaf!=null){
                 //check in bounds
-                Object key =  currentLeaf.keys[currentPos];
+                Object key =  currentLeaf.key(currentPos);
                 int c = m.comparator.compare(key, hi);
                 if (c > 0 || (c == 0 && !hiInclusive)){
                     //out of high bound
@@ -933,11 +1052,11 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             lock(nodeLocks, current);
             A = engine.get(current, nodeSerializer);
-            int pos = findChildren(key, A.keys());
-            if(pos<A.keys().length&& key!=null && A.keys()[pos]!=null &&
-                    0==comparator.compare(key,A.keys()[pos])){
+            int pos = findChildren(key, A);
+            if(pos<A.keysLen()&& key!=null && A.key(pos)!=null &&
+                    0==comparator.compare(key,A.key(pos))){
                 //check for last node which was already deleted
-                if(pos == A.keys().length-1 && value == null){
+                if(pos == A.keysLen()-1 && value == null){
                     unlock(nodeLocks, current);
                     return null;
                 }
@@ -950,16 +1069,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     return null;
                 }
 
-                Object[] keys2 = new Object[A.keys().length-1];
-                System.arraycopy(A.keys(),0,keys2, 0, pos);
-                System.arraycopy(A.keys(), pos+1, keys2, pos, keys2.length-pos);
-
-                Object[] vals2 = new Object[A.vals().length-1];
-                System.arraycopy(A.vals(),0,vals2, 0, pos-1);
-                System.arraycopy(A.vals(), pos, vals2, pos-1, vals2.length-(pos-1));
-
-
-                A = new LeafNode(keys2, vals2, ((LeafNode)A).next);
+                A = ((LeafNode)A).cloneRemove(pos);
                 assert(nodeLocks.get(current)==Thread.currentThread());
                 engine.update(current, A, nodeSerializer);
                 notify((K)key, (V)oldVal, null);
@@ -969,8 +1079,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 unlock(nodeLocks, current);
                 //follow link until necessary
                 if(A.highKey() != null && comparator.compare(key, A.highKey())>0){
-                    int pos2 = findChildren(key, A.keys());
-                    while(pos2 == A.keys().length){
+                    int pos2 = findChildren(key, A);
+                    while(pos2 == A.keysLen()){
                         //TODO lock?
                         current = ((LeafNode)A).next;
                         A = engine.get(current, nodeSerializer);
@@ -1013,7 +1123,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override
         public K next() {
             if(currentLeaf == null) throw new NoSuchElementException();
-            K ret = (K) currentLeaf.keys[currentPos];
+            K ret = (K) currentLeaf.key(currentPos);
             advance();
             return ret;
         }
@@ -1052,7 +1162,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override
         public Entry<K, V> next() {
             if(currentLeaf == null) throw new NoSuchElementException();
-            K ret = (K) currentLeaf.keys[currentPos];
+            K ret = (K) currentLeaf.key(currentPos);
             Object val = currentLeaf.vals[currentPos-1];
             advance();
             return m.makeEntry(ret, m.valExpand(val));
@@ -1127,32 +1237,31 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         try{
 
         LeafNode leaf = (LeafNode) engine.get(current, nodeSerializer);
-        int pos = findChildren(key, leaf.keys);
+        int pos = findChildren(key, leaf);
 
-        while(pos==leaf.keys.length){
+        while(pos==leaf.keysLen()){
             //follow leaf link until necessary
             lock(nodeLocks, leaf.next);
             unlock(nodeLocks, current);
             current = leaf.next;
             leaf = (LeafNode) engine.get(current, nodeSerializer);
-            pos = findChildren(key, leaf.keys);
+            pos = findChildren(key, leaf);
         }
 
         boolean ret = false;
-        if( key!=null && leaf.keys[pos]!=null &&
-                comparator.compare(key,leaf.keys[pos])==0){
-            Object val  = leaf.vals[pos-1];
+        if( key!=null && leaf.key(pos)!=null &&
+                 comparator.compare(key,leaf.key(pos))==0){
+           Object val  = leaf.vals[pos-1];
             val = valExpand(val);
             if(oldValue.equals(val)){
-                Object[] vals = Arrays.copyOf(leaf.vals, leaf.vals.length);
                 notify(key, oldValue, newValue);
-                vals[pos-1] = newValue;
+                Object newVal2 = newValue;
                 if(valsOutsideNodes){
                     long recid = engine.put(newValue, valueSerializer);
-                    vals[pos-1] =  new ValRef(recid);
+                    newVal2 =  new ValRef(recid);
                 }
 
-                leaf = new LeafNode(Arrays.copyOf(leaf.keys, leaf.keys.length), vals, leaf.next);
+                leaf = leaf.cloneUpdateVal(pos-1,newVal2);
 
                 assert(nodeLocks.get(current)==Thread.currentThread());
                 engine.update(current, leaf, nodeSerializer);
@@ -1187,35 +1296,32 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         try{
 
         LeafNode leaf = (LeafNode) engine.get(current, nodeSerializer);
-        int pos = findChildren(key, leaf.keys);
+        int pos = findChildren(key, leaf);
 
-        while(pos==leaf.keys.length){
+        while(pos==leaf.keysLen()){
             //follow leaf link until necessary
             lock(nodeLocks, leaf.next);
             unlock(nodeLocks, current);
             current = leaf.next;
             leaf = (LeafNode) engine.get(current, nodeSerializer);
-            pos = findChildren(key, leaf.keys);
+            pos = findChildren(key, leaf);
         }
 
         Object ret = null;
-        if( key!=null && leaf.keys()[pos]!=null &&
-                0==comparator.compare(key,leaf.keys[pos])){
-            Object[] vals = Arrays.copyOf(leaf.vals, leaf.vals.length);
-            Object oldVal = vals[pos-1];
+        if( key!=null && leaf.key(pos)!=null &&
+                0==comparator.compare(key,leaf.key(pos))){
+            Object oldVal = leaf.vals[pos-1];
             ret =  valExpand(oldVal);
             notify(key, (V)ret, value);
-            vals[pos-1] = value;
-            if(valsOutsideNodes && value!=null){
+            Object newValue = value;
+            if(valsOutsideNodes && newValue!=null){
                 long recid = engine.put(value, valueSerializer);
-                vals[pos-1] = new ValRef(recid);
+                newValue = new ValRef(recid);
             }
 
-            leaf = new LeafNode(Arrays.copyOf(leaf.keys, leaf.keys.length), vals, leaf.next);
+            leaf = leaf.cloneUpdateVal(pos-1,newValue);
             assert(nodeLocks.get(current)==Thread.currentThread());
             engine.update(current, leaf, nodeSerializer);
-
-
         }
         unlock(nodeLocks, current);
         return (V)ret;
@@ -1245,11 +1351,11 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         }
         LeafNode l = (LeafNode) n;
         //follow link until necessary
-        while(l.keys.length==2){
+        while(l.keysLen()==2){
             if(l.next==0) return null;
             l = (LeafNode) engine.get(l.next, nodeSerializer);
         }
-        return makeEntry(l.keys[1], valExpand(l.vals[0]));
+        return makeEntry(l.key(1), valExpand(l.vals[0]));
     }
 
 
@@ -1286,11 +1392,11 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
     private Entry<K, V> findSmallerRecur(BNode n, K key, boolean inclusive) {
         final boolean leaf = n.isLeaf();
-        final int start = leaf ? n.keys().length-2 : n.keys().length-1;
+        final int start = leaf ? n.keysLen()-2 : n.keysLen()-1;
         final int end = leaf?1:0;
         final int res = inclusive? 1 : 0;
         for(int i=start;i>=end; i--){
-            final Object key2 = n.keys()[i];
+            final Object key2 = n.key(i);
             int comp = (key2==null)? -1 : comparator.compare(key2, key);
             if(comp<res){
                 if(leaf){
@@ -1331,8 +1437,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             }
 
             //iterate over keys to find last non null key
-            for(int i=n.keys().length-2; i>0;i--){
-                Object k = n.keys()[i];
+            for(int i=n.keysLen()-2; i>0;i--){
+                Object k = n.key(i);
                 if(k!=null && n.vals().length>0) {
                     Object val = valExpand(n.vals()[i-1]);
                     if(val!=null){
@@ -1402,11 +1508,11 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         //follow link until first matching node is found
         final int comp = inclusive?1:0;
         while(true){
-            for(int i=1;i<leaf.keys.length-1;i++){
-                if(leaf.keys[i]==null) continue;
+            for(int i=1;i<leaf.keysLen()-1;i++){
+                if(leaf.key(i)==null) continue;
 
-                if(comparator.compare(key, leaf.keys[i])<comp){
-                    return makeEntry(leaf.keys[i], valExpand(leaf.vals[i-1]));
+                if(comparator.compare(key, leaf.key(i))<comp){
+                    return makeEntry(leaf.key(i), valExpand(leaf.vals[i-1]));
                 }
 
 
@@ -1435,10 +1541,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         //follow link until first matching node is found
         final int comp = inclusive?1:0;
         while(true){
-            for(int i=1;i<leaf.keys.length-1;i++){
-                if(leaf.keys[i]==null) continue;
+            for(int i=1;i<leaf.keysLen()-1;i++){
+                if(leaf.key(i)==null) continue;
 
-                if(comparator.compare(key, leaf.keys[i])<comp){
+                if(comparator.compare(key, leaf.key(i))<comp){
                     return Fun.t2(i, leaf);
                 }
             }
