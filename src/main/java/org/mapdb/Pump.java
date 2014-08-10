@@ -426,7 +426,11 @@ public final class Pump {
                 if(rightEdge2){
                     dirKeys.get(i).remove(dirKeys.get(i).size()-1);
                 }
-                BTreeMap.DirNode dir = new BTreeMap.DirNode(dirKeys.get(i).toArray(), toLongArray(dirRecids.get(i)),rightEdge2);
+                boolean leftEdge2 = dirKeys.get(i).get(0)==null;
+                if(leftEdge2){
+                    dirKeys.get(i).remove(0);
+                }
+                BTreeMap.DirNode dir = new BTreeMap.DirNode(dirKeys.get(i).toArray(), toLongArray(dirRecids.get(i)),leftEdge2,rightEdge2);
                 long dirRecid = engine.put(dir,nodeSerializer);
                 Object dirStart = dirKeys.get(i).get(0);
                 dirKeys.get(i).clear();
@@ -462,7 +466,11 @@ public final class Pump {
             if(rightEdge3){
                 keys2.remove(keys2.size()-1);
             }
-            BTreeMap.DirNode dir = new BTreeMap.DirNode(keys2.toArray(), toLongArray(dirRecids.get(i)),rightEdge3);
+            boolean leftEdge3 = keys2.get(0)==null;
+            if(leftEdge3){
+                keys2.remove(0);
+            }
+            BTreeMap.DirNode dir = new BTreeMap.DirNode(keys2.toArray(), toLongArray(dirRecids.get(i)),leftEdge3,rightEdge3);
             long dirRecid = engine.put(dir,nodeSerializer);
             Object dirStart = keys2.get(0);
             dirKeys.get(i+1).add(dirStart);
@@ -484,7 +492,11 @@ public final class Pump {
         if(rightEdge4){
             dirKeys.get(len).remove(dirKeys.get(len).size()-1);
         }
-        BTreeMap.DirNode dir = new BTreeMap.DirNode(dirKeys.get(len).toArray(), toLongArray(dirRecids.get(len)),rightEdge4);
+        boolean leftEdge4 = dirKeys.get(len).get(0)==null;
+        if(leftEdge4){
+            dirKeys.get(len).remove(0);
+        }
+        BTreeMap.DirNode dir = new BTreeMap.DirNode(dirKeys.get(len).toArray(), toLongArray(dirRecids.get(len)),leftEdge4,rightEdge4);
         long rootRecid = engine.put(dir, nodeSerializer);
         return engine.put(rootRecid,Serializer.LONG); //root recid
     }
