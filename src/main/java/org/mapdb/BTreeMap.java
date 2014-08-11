@@ -1928,7 +1928,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             this.loInclusive = loInclusive;
             this.hi = hi;
             this.hiInclusive = hiInclusive;
-            if(lo!=null && hi!=null && m.comparator.compare(lo, hi)>0){
+            if(lo!=null && hi!=null && m.comparator().compare(lo, hi)>0){
                     throw new IllegalArgumentException();
             }
 
@@ -2187,7 +2187,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     fromInclusive = loInclusive;
                 }
                 else {
-                    int c = m.comparator.compare(fromKey, lo);
+                    int c = m.comparator().compare(fromKey, lo);
                     if (c < 0 || (c == 0 && !loInclusive && fromInclusive))
                         throw new IllegalArgumentException("key out of range");
                 }
@@ -2198,7 +2198,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     toInclusive = hiInclusive;
                 }
                 else {
-                    int c = m.comparator.compare(toKey, hi);
+                    int c = m.comparator().compare(toKey, hi);
                     if (c > 0 || (c == 0 && !hiInclusive && toInclusive))
                         throw new IllegalArgumentException("key out of range");
                 }
@@ -2265,7 +2265,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         private boolean tooLow(K key) {
             if (lo != null) {
-                int c = m.comparator.compare(key, lo);
+                int c = m.comparator().compare(key, lo);
                 if (c < 0 || (c == 0 && !loInclusive))
                     return true;
             }
@@ -2274,7 +2274,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         private boolean tooHigh(K key) {
             if (hi != null) {
-                int c = m.comparator.compare(key, hi);
+                int c = m.comparator().compare(key, hi);
                 if (c > 0 || (c == 0 && !hiInclusive))
                     return true;
             }
@@ -2346,7 +2346,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             this.loInclusive = loInclusive;
             this.hi = hi;
             this.hiInclusive = hiInclusive;
-            if(lo!=null && hi!=null && m.comparator.compare(lo, hi)>0){
+            if(lo!=null && hi!=null && m.comparator().compare(lo, hi)>0){
                 throw new IllegalArgumentException();
             }
 
@@ -2606,7 +2606,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     fromInclusive = loInclusive;
                 }
                 else {
-                    int c = m.comparator.compare(fromKey, lo);
+                    int c = m.comparator().compare(fromKey, lo);
                     if (c < 0 || (c == 0 && !loInclusive && fromInclusive))
                         throw new IllegalArgumentException("key out of range");
                 }
@@ -2617,7 +2617,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     toInclusive = hiInclusive;
                 }
                 else {
-                    int c = m.comparator.compare(toKey, hi);
+                    int c = m.comparator().compare(toKey, hi);
                     if (c > 0 || (c == 0 && !hiInclusive && toInclusive))
                         throw new IllegalArgumentException("key out of range");
                 }
@@ -2685,7 +2685,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         private boolean tooLow(K key) {
             if (lo != null) {
-                int c = m.comparator.compare(key, lo);
+                int c = m.comparator().compare(key, lo);
                 if (c < 0 || (c == 0 && !loInclusive))
                     return true;
             }
@@ -2694,7 +2694,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         private boolean tooHigh(K key) {
             if (hi != null) {
-                int c = m.comparator.compare(key, hi);
+                int c = m.comparator().compare(key, hi);
                 if (c > 0 || (c == 0 && !hiInclusive))
                     return true;
             }
