@@ -794,7 +794,6 @@ public class DB implements Closeable {
                 catGet(name+".counterRecid",0L),
                 (BTreeKeySerializer)catGet(name+".keySerializer",new BTreeKeySerializer.BasicKeySerializer(getDefaultSerializer(),comp)),
                 catGet(name+".valueSerializer",getDefaultSerializer()),
-                comp,
                 catGet(name+".numberOfNodeMetas",0),
                 false
                 );
@@ -843,7 +842,7 @@ public class DB implements Closeable {
 
         long rootRecidRef;
         if(m.pumpSource==null){
-            rootRecidRef = BTreeMap.createRootRef(engine,m.keySerializer,m.valueSerializer,m.comparator,0);
+            rootRecidRef = BTreeMap.createRootRef(engine,m.keySerializer,m.valueSerializer,0);
         }else{
             rootRecidRef = Pump.buildTreeMap(
                     (Iterator<K>)m.pumpSource,
@@ -854,8 +853,8 @@ public class DB implements Closeable {
                     m.valuesOutsideNodes,
                     counterRecid,
                     m.keySerializer,
-                    (Serializer<V>)m.valueSerializer,
-                    m.comparator);
+                    (Serializer<V>)m.valueSerializer
+                    );
         }
 
         BTreeMap<K,V> ret = new BTreeMap<K,V>(engine,
@@ -865,7 +864,6 @@ public class DB implements Closeable {
                 catPut(name+".counterRecid",counterRecid),
                 m.keySerializer,
                 (Serializer<V>)m.valueSerializer,
-                (Comparator<K>)m.comparator,
                 catPut(m.name+".numberOfNodeMetas",0),
                 false
         );
@@ -1003,9 +1001,8 @@ public class DB implements Closeable {
                 catGet(name+".maxNodeSize",32),
                 false,
                 catGet(name+".counterRecid",0L),
-                (BTreeKeySerializer) catGet(name+".keySerializer",new BTreeKeySerializer.BasicKeySerializer(getDefaultSerializer(),Fun.COMPARATOR_NON_NULL)),
+                catGet(name+".keySerializer",new BTreeKeySerializer.BasicKeySerializer(getDefaultSerializer(),Fun.COMPARATOR_NON_NULL)),
                 null,
-                catGet(name+".comparator", Fun.COMPARATOR_NON_NULL),
                 catGet(name+".numberOfNodeMetas",0),
                 false
         ).keySet();
@@ -1042,7 +1039,7 @@ public class DB implements Closeable {
         long rootRecidRef;
 
         if(m.pumpSource==null){
-            rootRecidRef = BTreeMap.createRootRef(engine,m.serializer,null,m.comparator,0);
+            rootRecidRef = BTreeMap.createRootRef(engine,m.serializer,null,0);
         }else{
             rootRecidRef = Pump.buildTreeMap(
                     (Iterator<Object>)m.pumpSource,
@@ -1054,8 +1051,7 @@ public class DB implements Closeable {
                     false,
                     counterRecid,
                     m.serializer,
-                    null,
-                    m.comparator);
+                    null);
         }
 
         NavigableSet<K> ret = new BTreeMap<K,Object>(
@@ -1066,7 +1062,6 @@ public class DB implements Closeable {
                 catPut(m.name+".counterRecid",counterRecid),
                 m.serializer,
                 null,
-                (Comparator<K>)m.comparator,
                 catPut(m.name+".numberOfNodeMetas",0),
                 false
         ).keySet();

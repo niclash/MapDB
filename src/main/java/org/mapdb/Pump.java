@@ -314,7 +314,6 @@ public final class Pump {
      * @param counterRecid TODO make size counter friendly to use
      * @param keySerializer serializer for keys, use null for default value
      * @param valueSerializer serializer for value, use null for default value
-     * @param comparator comparator used to compare keys, use null for 'comparable comparator'
      * @throws IllegalArgumentException if source iterator is not reverse sorted
      */
     public static  <E,K,V> long buildTreeMap(Iterator<E> source,
@@ -326,16 +325,13 @@ public final class Pump {
                                              boolean valuesStoredOutsideNodes,
                                              long counterRecid,
                                              BTreeKeySerializer keySerializer,
-                                             Serializer<V> valueSerializer,
-                                             Comparator comparator)
+                                             Serializer<V> valueSerializer)
         {
 
-        if(comparator==null)
-            comparator= Fun.COMPARATOR_NON_NULL;
 
         final double NODE_LOAD = 0.75;
 
-        Serializer<BTreeMap.BNode> nodeSerializer = new BTreeMap.NodeSerializer(valuesStoredOutsideNodes,keySerializer,valueSerializer,comparator,0);
+        Serializer<BTreeMap.BNode> nodeSerializer = new BTreeMap.NodeSerializer(valuesStoredOutsideNodes,keySerializer,valueSerializer,0);
 
 
         final int nload = (int) (nodeSize * NODE_LOAD);
@@ -358,14 +354,14 @@ public final class Pump {
                 E next = source.next();
                 if(next==null) throw new NullPointerException("source returned null element");
                 K key = keyExtractor==null? (K) next : keyExtractor.run(next);
-                int compared=oldKey==null?-1:comparator.compare(key, oldKey);
+                int compared=oldKey==null?-1:keySerializer.comparator().compare(key, oldKey);
                 while(ignoreDuplicates && compared==0){
                     //move to next
                     if(!source.hasNext())break nodeLoop;
                     next = source.next();
                     if(next==null) throw new NullPointerException("source returned null element");
                     key = keyExtractor==null? (K) next : keyExtractor.run(next);
-                    compared=comparator.compare(key, oldKey);
+                    compared=keySerializer.comparator().compare(key, oldKey);
                 }
 
                 if(oldKey!=null && compared>=0)
