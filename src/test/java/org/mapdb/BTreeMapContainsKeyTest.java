@@ -21,8 +21,8 @@ public class BTreeMapContainsKeyTest extends JSR166TestCase {
     @Override
     protected void setUp() throws Exception {
         r = new StoreDirect(Volume.memoryFactory(false, 0L,CC.VOLUME_SLICE_SHIFT));
-        map = new BTreeMap(r, createRootRef(r,BASIC, Serializer.BASIC, COMPARATOR_NON_NULL,0),
-                6, valsOutsideNodes, 0, BASIC, valueSerializer, COMPARATOR_NON_NULL, 0,false);
+        map = new BTreeMap(r, createRootRef(r,BASIC, Serializer.BASIC, 0),
+                6, valsOutsideNodes, 0, BASIC, valueSerializer,  0,false);
     }
 
     /**

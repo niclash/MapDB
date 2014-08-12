@@ -275,9 +275,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         @Override
         public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
-            keySerializer.serialize(out, 0,
-                    keys.length,
-                    keys);
+            keySerializer.serialize(out,keys);
         }
 
         @Override
@@ -368,10 +366,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         @Override
         public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
-
-            keySerializer.serialize(out,0,
-                    keys.length,
-                    keys);
+            keySerializer.serialize(out, keys);
         }
 
         @Override
@@ -556,7 +551,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 child[i] = DataIO.unpackLong(in);
 
             int arrayLen = size -(rightEdge?1:0)-(leftEdge?1:0);
-            final Object[] keys = keySerializer.deserialize(in, 0,arrayLen,arrayLen);
+            final Object[] keys = (Object[]) keySerializer.deserialize(in, arrayLen);
             assert(keys.length==size-(leftEdge?1:0)-(rightEdge?1:0));
             return new DirNode(keys, child,leftEdge,rightEdge);
         }
@@ -564,7 +559,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         private BNode deserializeLeaf(final DataInput in, final int size, final boolean leftEdge, final boolean rightEdge) throws IOException {
             final long next = DataIO.unpackLong(in);
             int arrayLen = size -(rightEdge?1:0)-(leftEdge?1:0);
-            final Object[] keys = keySerializer.deserialize(in, 0, arrayLen , arrayLen);
+            final Object[] keys = (Object[]) keySerializer.deserialize(in, arrayLen);
             assert(keys.length==arrayLen);
             Object[] vals = new Object[size-2];
             if(hasValues){

@@ -73,10 +73,10 @@ public class BTreeKeySerializerTest {
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple2_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple2_serializer.serialize(out, v.toArray(new Fun.Tuple2[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple2_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple2_serializer.deserialize(in, v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -95,10 +95,10 @@ public class BTreeKeySerializerTest {
         v.add(null);
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple2_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple2_serializer.serialize(out, new Fun.Tuple2[0]);
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple2_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple2_serializer.deserialize(in, v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -125,10 +125,10 @@ public class BTreeKeySerializerTest {
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple3_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple3_serializer.serialize(out, new Fun.Tuple3[0]);
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple3_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple3_serializer.deserialize(in, v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -149,10 +149,10 @@ public class BTreeKeySerializerTest {
         v.add(null);
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple3_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple3_serializer.serialize(out, new Fun.Tuple3[0]);
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple3_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple3_serializer.deserialize(in,v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -179,10 +179,10 @@ public class BTreeKeySerializerTest {
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple4_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple4_serializer.serialize(out, new Fun.Tuple4[0]);
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple4_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple4_serializer.deserialize(in, v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -205,10 +205,10 @@ public class BTreeKeySerializerTest {
         v.add(null);
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple4_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple4_serializer.serialize(out, new Fun.Tuple4[0]);
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple4_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple4_serializer.deserialize(in, v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -236,10 +236,10 @@ Fun.COMPARATOR_NON_NULL,
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple5_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple5_serializer.serialize(out,new Fun.Tuple5[0]);
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple5_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple5_serializer.deserialize(in, v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -265,10 +265,10 @@ Fun.COMPARATOR_NON_NULL,
         v.add(null);
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple5_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple5_serializer.serialize(out, new Fun.Tuple5[0]);
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple5_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple5_serializer.deserialize(in,v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -296,10 +296,10 @@ Fun.COMPARATOR_NON_NULL, Fun.COMPARATOR_NON_NULL,
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple6_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple6_serializer.serialize(out, new Fun.Tuple6[0] );
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple6_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple6_serializer.deserialize(in,  v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
@@ -327,10 +327,10 @@ Fun.COMPARATOR_NON_NULL, Fun.COMPARATOR_NON_NULL,
         v.add(null);
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple6_serializer.serialize(out, 1, v.size() - 1, v.toArray());
+        tuple6_serializer.serialize(out, new Fun.Tuple6[0]);
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
-        Object[] nn = tuple6_serializer.deserialize(in,1,v.size()-1, v.size());
+        Object[] nn = tuple6_serializer.deserialize(in,  v.size());
 
         assertArrayEquals(v.toArray(), nn);
 
