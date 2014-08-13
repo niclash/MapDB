@@ -60,8 +60,8 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
 
     public abstract int length(Object keys);
 
-    /** expand keys array by one and put new key at possition `pos` */
-    public abstract Object putKey(Object keys, int pos, Object o);
+    /** expand keys array by one and put `newKey` at position `pos` */
+    public abstract Object putKey(Object keys, int pos, Object newKey);
 
     public abstract Object copyOfRange(Object keys, int from, int to);
 
@@ -136,8 +136,8 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         }
 
         @Override
-        public Object putKey(Object keys, int pos, Object o) {
-            return BTreeMap.arrayPut((Object[]) keys, pos, o);
+        public Object putKey(Object keys, int pos, Object newKey) {
+            return BTreeMap.arrayPut((Object[]) keys, pos, newKey);
         }
 
         @Override
@@ -207,8 +207,8 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         }
 
         @Override
-        public Object putKey(Object keys, int pos, Object o) {
-            return BTreeMap.arrayLongPut((long[])keys, pos, (Long) o);
+        public Object putKey(Object keys, int pos, Object newKey) {
+            return BTreeMap.arrayLongPut((long[])keys, pos, (Long) newKey);
         }
 
         @Override
@@ -276,19 +276,19 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         }
 
         @Override
-        public Object putKey(Object keys, int pos, Object val) {
+        public Object putKey(Object keys, int pos, Object newKey) {
             int array[] = (int[]) keys;
             final int[] ret = Arrays.copyOf(array,array.length+1);
             if(pos<array.length){
                 System.arraycopy(array,pos,ret,pos+1,array.length-pos);
             }
-            ret[pos] = (Integer)val;
+            ret[pos] = (Integer) newKey;
             return ret;
         }
 
         @Override
         public Object copyOfRange(Object keys, int from, int to) {
-           return Arrays.copyOfRange((int[]) keys,from,to);;
+           return Arrays.copyOfRange((int[]) keys,from,to);
         }
 
     };
@@ -395,6 +395,25 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         @Override
         public Object emptyKeys() {
             return new StringKeys(new int[0], new char[0]);
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((StringKeys)keys).offsets.length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object newKey) {
+            StringKeys keys2 = (StringKeys) keys;
+            char[] newKey2 = (char[]) newKey;
+            throw new Error("TODO"); //TODO
+
+//            return null;
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+            throw new Error("TODO"); //TODO
         }
 
     };
@@ -613,13 +632,13 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         }
 
         @Override
-        public Object putKey(Object keys, int pos, Object o) {
+        public Object putKey(Object keys, int pos, Object newKey) {
             final Fun.Tuple2[] array = (Fun.Tuple2[]) keys;
             final Fun.Tuple2[] ret = Arrays.copyOf(array, array.length+1);
             if(pos<array.length){
                 System.arraycopy(array, pos, ret, pos+1, array.length-pos);
             }
-            ret[pos] = (Fun.Tuple2) o;
+            ret[pos] = (Fun.Tuple2) newKey;
             return ret;
         }
 
@@ -819,13 +838,13 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         }
 
         @Override
-        public Object putKey(Object keys, int pos, Object o) {
+        public Object putKey(Object keys, int pos, Object newKey) {
             final Fun.Tuple3[] array = (Fun.Tuple3[]) keys;
             final Fun.Tuple3[] ret = Arrays.copyOf(array, array.length+1);
             if(pos<array.length){
                 System.arraycopy(array, pos, ret, pos+1, array.length-pos);
             }
-            ret[pos] = (Fun.Tuple3) o;
+            ret[pos] = (Fun.Tuple3) newKey;
             return ret;
         }
 
@@ -1063,13 +1082,13 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         }
 
         @Override
-        public Object putKey(Object keys, int pos, Object o) {
+        public Object putKey(Object keys, int pos, Object newKey) {
             final Fun.Tuple4[] array = (Fun.Tuple4[]) keys;
             final Fun.Tuple4[] ret = Arrays.copyOf(array, array.length+1);
             if(pos<array.length){
                 System.arraycopy(array, pos, ret, pos+1, array.length-pos);
             }
-            ret[pos] = (Fun.Tuple4) o;
+            ret[pos] = (Fun.Tuple4) newKey;
             return ret;
         }
 
@@ -1324,13 +1343,13 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         }
 
         @Override
-        public Object putKey(Object keys, int pos, Object o) {
+        public Object putKey(Object keys, int pos, Object newKey) {
             final Fun.Tuple5[] array = (Fun.Tuple5[]) keys;
             final Fun.Tuple5[] ret = Arrays.copyOf(array, array.length+1);
             if(pos<array.length){
                 System.arraycopy(array, pos, ret, pos+1, array.length-pos);
             }
-            ret[pos] = (Fun.Tuple5) o;
+            ret[pos] = (Fun.Tuple5) newKey;
             return ret;
         }
 
@@ -1620,13 +1639,13 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         }
 
         @Override
-        public Object putKey(Object keys, int pos, Object o) {
+        public Object putKey(Object keys, int pos, Object newKey) {
             final Fun.Tuple6[] array = (Fun.Tuple6[]) keys;
             final Fun.Tuple6[] ret = Arrays.copyOf(array, array.length+1);
             if(pos<array.length){
                 System.arraycopy(array, pos, ret, pos+1, array.length-pos);
             }
-            ret[pos] = (Fun.Tuple6) o;
+            ret[pos] = (Fun.Tuple6) newKey;
             return ret;
         }
 
