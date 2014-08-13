@@ -308,7 +308,9 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
      * Applies delta packing on {@code java.lang.String}. This serializer splits consequent strings
      * to two parts: shared prefix and different suffix. Only suffix is than stored.
      */
-    public static final  BTreeKeySerializer STRING = new BTreeKeySerializer<String,char[], StringKeys>() {
+    public static final  BTreeKeySerializer STRING = BASIC;
+//TODO reenable STRING key ser once finished
+            private static final Object aa = new BTreeKeySerializer<String,char[], StringKeys>() {
 
         private final Charset UTF8_CHARSET = Charset.forName("UTF8");
 
@@ -406,9 +408,36 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Object putKey(Object keys, int pos, Object newKey) {
             StringKeys keys2 = (StringKeys) keys;
             char[] newKey2 = (char[]) newKey;
-            throw new Error("TODO"); //TODO
 
-//            return null;
+            //handle empty input
+            if(keys2.offsets.length==0){
+                return new StringKeys(new int[newKey2.length],newKey2);
+            }
+
+            final int[] ri = new int[keys2.chars.length];
+            final int charNewLen = keys2.chars[keys2.chars.length-1] + newKey2.length;
+            final char[] rc = new char[charNewLen];
+
+            final int charOffsetBeforePos = pos==0? 0 : keys2.offsets[pos-1] ;
+
+            //copy before newKey
+            if(pos!=0) {
+                System.arraycopy(keys2.offsets, 0, ri, 0, pos - 1);
+                System.arraycopy(keys2.chars, 0, rc, 0, charOffsetBeforePos);
+            }
+            //copy newKey
+            ri[pos] = charOffsetBeforePos+newKey2.length;
+            System.arraycopy(newKey2, 0, rc, charOffsetBeforePos, newKey2.length);
+
+            //copy beyond newkey
+            if(keys2.offsets.length!=pos){
+                for(int i=pos;i<ri.length;i++){
+ //                   ri[i] =
+                }
+
+            }
+
+            return new StringKeys(ri,rc);
         }
 
         @Override
