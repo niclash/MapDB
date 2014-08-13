@@ -5,6 +5,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Comparator;
 
 /**
@@ -13,7 +14,9 @@ import java.util.Comparator;
  * Keys in BTree Nodes are sorted, this enables number of tricks to save disk space.
  * For example for numbers we may store only difference between subsequent numbers, for string we can only take suffix, etc...
  *
- * @param <K> type of key
+ * @param <KEY> type of key
+ * @param <KEY2> type of predigested keys
+ * @param <KEYS> type of object which holds multiple keys (
  */
 public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
 
@@ -52,6 +55,16 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
     public static final BTreeKeySerializer BASIC = new BTreeKeySerializer.BasicKeySerializer(Serializer.BASIC, Fun.COMPARATOR_NON_NULL);
 
     public abstract Comparator comparator();
+
+    public abstract Object emptyKeys();
+
+    public abstract int length(Object keys);
+
+    /** expand keys array by one and put new key at possition `pos` */
+    public abstract Object putKey(Object keys, int pos, Object o);
+
+    public abstract Object copyOfRange(Object keys, int from, int to);
+
 
     /**
      * Basic Key Serializer which just writes data without applying any compression.
@@ -111,6 +124,26 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Comparator comparator() {
             return comparator;
         }
+
+        @Override
+        public Object emptyKeys() {
+            return new Object[0];
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((Object[])keys).length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object o) {
+            return BTreeMap.arrayPut((Object[]) keys, pos, o);
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+            return Arrays.copyOfRange((Object[]) keys,from,to);
+        }
     }
 
 
@@ -162,6 +195,26 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Comparator comparator() {
             return Fun.COMPARATOR_NON_NULL;
         }
+
+        @Override
+        public Object emptyKeys() {
+            return new long[0];
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((long[])keys).length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object o) {
+            return BTreeMap.arrayLongPut((long[])keys, pos, (Long) o);
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+            return Arrays.copyOfRange((long[]) keys,from,to);
+        }
     };
 
     /**
@@ -210,6 +263,32 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         @Override
         public Comparator comparator() {
             return Fun.COMPARATOR_NON_NULL;
+        }
+
+        @Override
+        public Object emptyKeys() {
+            return new int[0];
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((int[])keys).length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object val) {
+            int array[] = (int[]) keys;
+            final int[] ret = Arrays.copyOf(array,array.length+1);
+            if(pos<array.length){
+                System.arraycopy(array,pos,ret,pos+1,array.length-pos);
+            }
+            ret[pos] = (Integer)val;
+            return ret;
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+           return Arrays.copyOfRange((int[]) keys,from,to);;
         }
 
     };
@@ -311,6 +390,11 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         @Override
         public Comparator comparator() {
             return Fun.COMPARATOR_NON_NULL;
+        }
+
+        @Override
+        public Object emptyKeys() {
+            return new StringKeys(new int[0], new char[0]);
         }
 
     };
@@ -518,6 +602,33 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
             return comparator;
         }
 
+        @Override
+        public Object emptyKeys() {
+            return new Fun.Tuple2[0];
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((Fun.Tuple2[])keys).length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object o) {
+            final Fun.Tuple2[] array = (Fun.Tuple2[]) keys;
+            final Fun.Tuple2[] ret = Arrays.copyOf(array, array.length+1);
+            if(pos<array.length){
+                System.arraycopy(array, pos, ret, pos+1, array.length-pos);
+            }
+            ret[pos] = (Fun.Tuple2) o;
+            return ret;
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+            return Arrays.copyOfRange((Fun.Tuple2[])keys,from,to);
+        }
+
+
     }
 
     /**
@@ -696,6 +807,33 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Comparator comparator() {
             return comparator;
         }
+
+        @Override
+        public Object emptyKeys() {
+            return new Fun.Tuple3[0];
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((Fun.Tuple3[])keys).length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object o) {
+            final Fun.Tuple3[] array = (Fun.Tuple3[]) keys;
+            final Fun.Tuple3[] ret = Arrays.copyOf(array, array.length+1);
+            if(pos<array.length){
+                System.arraycopy(array, pos, ret, pos+1, array.length-pos);
+            }
+            ret[pos] = (Fun.Tuple3) o;
+            return ret;
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+            return Arrays.copyOfRange((Fun.Tuple3[])keys,from,to);
+        }
+
 
     }
 
@@ -913,6 +1051,33 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Comparator comparator() {
             return comparator;
         }
+
+        @Override
+        public Object emptyKeys() {
+            return new Fun.Tuple4[0];
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((Fun.Tuple4[])keys).length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object o) {
+            final Fun.Tuple4[] array = (Fun.Tuple4[]) keys;
+            final Fun.Tuple4[] ret = Arrays.copyOf(array, array.length+1);
+            if(pos<array.length){
+                System.arraycopy(array, pos, ret, pos+1, array.length-pos);
+            }
+            ret[pos] = (Fun.Tuple4) o;
+            return ret;
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+            return Arrays.copyOfRange((Fun.Tuple4[])keys,from,to);
+        }
+
 
     }
 
@@ -1147,6 +1312,33 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
         public Comparator comparator() {
             return comparator;
         }
+
+        @Override
+        public Object emptyKeys() {
+            return new Fun.Tuple5[0];
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((Fun.Tuple5[])keys).length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object o) {
+            final Fun.Tuple5[] array = (Fun.Tuple5[]) keys;
+            final Fun.Tuple5[] ret = Arrays.copyOf(array, array.length+1);
+            if(pos<array.length){
+                System.arraycopy(array, pos, ret, pos+1, array.length-pos);
+            }
+            ret[pos] = (Fun.Tuple5) o;
+            return ret;
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+            return Arrays.copyOfRange((Fun.Tuple5[])keys,from,to);
+        }
+
 
     }
 
@@ -1416,6 +1608,32 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
             return comparator;
         }
 
+
+        @Override
+        public Object emptyKeys() {
+            return new Fun.Tuple6[0];
+        }
+
+        @Override
+        public int length(Object keys) {
+            return ((Fun.Tuple6[])keys).length;
+        }
+
+        @Override
+        public Object putKey(Object keys, int pos, Object o) {
+            final Fun.Tuple6[] array = (Fun.Tuple6[]) keys;
+            final Fun.Tuple6[] ret = Arrays.copyOf(array, array.length+1);
+            if(pos<array.length){
+                System.arraycopy(array, pos, ret, pos+1, array.length-pos);
+            }
+            ret[pos] = (Fun.Tuple6) o;
+            return ret;
+        }
+
+        @Override
+        public Object copyOfRange(Object keys, int from, int to) {
+            return Arrays.copyOfRange((Fun.Tuple6[])keys,from,to);
+        }
     }
 
 
