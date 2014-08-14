@@ -287,19 +287,12 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         @Override
         public int compare(BTreeKeySerializer keyser, int pos1, int pos2) {
-            if(isLeaf()){
-                pos1--;
-                pos2--;
-            }
-            return keyser.compare(keys,pos1,pos2);
+            return keyser.comparator().compare(key(keyser,pos1), key(keyser,pos2));
         }
 
         @Override
         public int compare(BTreeKeySerializer keyser, int pos1, Object key) {
-            if(isLeaf()){
-                pos1--;
-            }
-            return keyser.compare(keys,pos1,key);
+            return keyser.comparator().compare(key(keyser,pos1), key);
         }
 
         public BNode cloneExpand(BTreeKeySerializer keyser,int pos, Object key, long newChild) {
@@ -401,22 +394,13 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         @Override
         public int compare(BTreeKeySerializer keyser, int pos1, int pos2) {
-            if(isLeaf()){
-                pos1--;
-                pos2--;
-            }
-            return keyser.compare(keys,pos1,pos2);
+            return keyser.comparator().compare(key(keyser,pos1), key(keyser,pos2));
         }
 
         @Override
         public int compare(BTreeKeySerializer keyser, int pos1, Object key) {
-            if(isLeaf()){
-                pos1--;
-            }
-            return keyser.compare(keys,pos1,key);
+            return keyser.comparator().compare(key(keyser,pos1), key);
         }
-
-
 
         public LeafNode cloneUpdateVal(BTreeKeySerializer keyser, int pos, Object value) {
             Object[] vals2 = vals.clone();
@@ -433,9 +417,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         public LeafNode cloneRemove(BTreeKeySerializer keyser, int pos) {
             int kpos = pos-(leftEdge?1:0);
-            Object[] keys2 = new Object[keyser.length(keys)-1];
-            System.arraycopy(keys,0,keys2, 0, kpos);
-            System.arraycopy(keys, kpos+1, keys2, kpos, keys2.length-kpos);
+            Object keys2 = keyser.deleteKey(keys,kpos);
 
             Object[] vals2 = new Object[vals.length-1];
             System.arraycopy(vals,0,vals2, 0, pos-1);
@@ -940,7 +922,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 }else{
                     BNode R =
                             new DirNode(keySerializer,
-                                new Object[]{A.highKey(keySerializer)},
+                                keySerializer.putKey(keySerializer.emptyKeys(),0,A.highKey(keySerializer)),
                                 new long[]{current,q, 0},true,true);
 
                     lock(nodeLocks, rootRecidRef);

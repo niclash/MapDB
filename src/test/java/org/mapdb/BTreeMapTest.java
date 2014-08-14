@@ -25,7 +25,7 @@ public class BTreeMapTest{
                 0,false);;
     }
 
-    BTreeKeySerializer keyser = new BTreeKeySerializer.BasicKeySerializer(new SerializerBase(), Fun.COMPARATOR);
+    BTreeKeySerializer keyser = BTreeKeySerializer.BASIC;
 
     @Test public void test_leaf_node_serialization() throws IOException {
 
@@ -36,6 +36,47 @@ public class BTreeMapTest{
         assertEquals(n.next, n2.next);
     }
 
+    @Test public void testNodeSerialization(){
+        boolean[] bb={true,false};
+
+        for(boolean right:bb){
+            for(boolean left:bb){
+                for(int size=3;size<10;size++){
+                    Object[] keys = new Object[size];
+                    long[] child = new long[size+(left?1:0)+(right?1:0)];
+
+                    for(int i=0;i<keys.length;i++){
+                        keys[i] = i;
+                    }
+
+                    for(int i=0;i<child.length;i++){
+                        child[i] = i;
+                    }
+
+                    if(right)
+                        child[child.length-1] =0;
+
+                    Object[] vals = new Object[size-(left?0:1)-(right?0:1)];
+                    Arrays.fill(vals,"");
+
+                    BTreeMap.LeafNode l = new BTreeMap.LeafNode(keyser,keys, vals,11,left,right);
+                    BTreeMap.LeafNode l2 = (BTreeMap.LeafNode) UtilsTest.clone(l, m.nodeSerializer);
+                    assertArrayEquals((Object[])l.keys, (Object[])l2.keys);
+                    assertArrayEquals(l.vals, l2.vals);
+                    assertEquals(l.next, l.next);
+                    assertEquals(l.isLeftEdge(), l2.isLeftEdge());
+                    assertEquals(l.isRightEdge(), l2.isRightEdge());
+
+                    BTreeMap.DirNode d = new BTreeMap.DirNode(keyser,keys, child,left,right);
+                    BTreeMap.DirNode d2 = (BTreeMap.DirNode) UtilsTest.clone(d, m.nodeSerializer);
+                    assertArrayEquals((Object[])d.keys, (Object[])d2.keys);
+                    assertArrayEquals(d.child, d2.child);
+                    assertEquals(d.isLeftEdge(), d2.isLeftEdge());
+                    assertEquals(d.isRightEdge(), d2.isRightEdge());
+                }
+            }
+        }
+    }
     
 	@Test public void test_dir_node_serialization() throws IOException {
 

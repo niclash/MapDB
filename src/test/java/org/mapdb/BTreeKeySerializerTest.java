@@ -61,7 +61,7 @@ public class BTreeKeySerializerTest {
     @Test public void tuple2_simple() throws IOException {
         List<Fun.Tuple2<String,Integer>> v = new ArrayList<Fun.Tuple2<String, Integer>>();
 
-        v.add(null);
+        
         v.add(Fun.t2("aa",1));
         v.add(Fun.t2("aa",2));
         v.add(Fun.t2("aa",3));
@@ -69,7 +69,7 @@ public class BTreeKeySerializerTest {
         v.add(Fun.t2("zz",1));
         v.add(Fun.t2("zz",2));
         v.add(Fun.t2("zz",3));
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
@@ -84,7 +84,7 @@ public class BTreeKeySerializerTest {
     @Test public void tuple2() throws IOException {
         List<Fun.Tuple2<String,Integer>> v = new ArrayList<Fun.Tuple2<String, Integer>>();
 
-        v.add(null);
+        
 
         for(String s: new String[]{"aa","bb","oper","zzz"}){
             for(int i = 2;i<1000;i+=i/2){
@@ -92,10 +92,10 @@ public class BTreeKeySerializerTest {
             }
         }
 
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple2_serializer.serialize(out, new Fun.Tuple2[0]);
+        tuple2_serializer.serialize(out, v.toArray(new Fun.Tuple2[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple2_serializer.deserialize(in, v.size());
@@ -112,7 +112,7 @@ public class BTreeKeySerializerTest {
     @Test public void tuple3_simple() throws IOException {
         List<Fun.Tuple3<String,Integer, Double>> v = new ArrayList<Fun.Tuple3<String, Integer, Double>>();
 
-        v.add(null);
+        
         v.add(Fun.t3("aa",1,1D));
         v.add(Fun.t3("aa",1,2D));
         v.add(Fun.t3("aa",2,2D));
@@ -121,11 +121,11 @@ public class BTreeKeySerializerTest {
         v.add(Fun.t3("zz",1,2D));
         v.add(Fun.t3("zz",2,2D));
         v.add(Fun.t3("zz",3,2D));
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple3_serializer.serialize(out, new Fun.Tuple3[0]);
+        tuple3_serializer.serialize(out, v.toArray(new Fun.Tuple3[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple3_serializer.deserialize(in, v.size());
@@ -136,7 +136,7 @@ public class BTreeKeySerializerTest {
     @Test public void tuple3() throws IOException {
         List<Fun.Tuple3<String,Integer,Double>> v = new ArrayList<Fun.Tuple3<String, Integer,Double>>();
 
-        v.add(null);
+        
 
         for(String s: new String[]{"aa","bb","oper","zzz"}){
             for(int i = 2;i<1000;i+=i/2){
@@ -146,10 +146,8 @@ public class BTreeKeySerializerTest {
             }
         }
 
-        v.add(null);
-
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple3_serializer.serialize(out, new Fun.Tuple3[0]);
+        tuple3_serializer.serialize(out,  v.toArray(new Fun.Tuple3[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple3_serializer.deserialize(in,v.size());
@@ -165,7 +163,7 @@ public class BTreeKeySerializerTest {
     @Test public void tuple4_simple() throws IOException {
         List<Fun.Tuple4<String,Integer, Double, Long>> v = new ArrayList<Fun.Tuple4<String, Integer, Double,Long>>();
 
-        v.add(null);
+        
         v.add(Fun.t4("aa",1,1D,1L));
         v.add(Fun.t4("aa",1,1D,2L));
         v.add(Fun.t4("aa",1,2D,2L));
@@ -175,11 +173,11 @@ public class BTreeKeySerializerTest {
         v.add(Fun.t4("zz",1,2D,2L));
         v.add(Fun.t4("zz",2,2D,2L));
         v.add(Fun.t4("zz",3,2D,2L));
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple4_serializer.serialize(out, new Fun.Tuple4[0]);
+        tuple4_serializer.serialize(out, v.toArray(new Fun.Tuple4[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple4_serializer.deserialize(in, v.size());
@@ -190,7 +188,7 @@ public class BTreeKeySerializerTest {
     @Test public void tuple4() throws IOException {
         List<Fun.Tuple4<String,Integer,Double, Long>> v = new ArrayList<Fun.Tuple4<String, Integer,Double,Long>>();
 
-        v.add(null);
+        
 
         for(String s: new String[]{"aa","bb","oper","zzz"}){
             for(int i = 2;i<1000;i+=i/2){
@@ -202,10 +200,10 @@ public class BTreeKeySerializerTest {
             }
         }
 
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple4_serializer.serialize(out, new Fun.Tuple4[0]);
+        tuple4_serializer.serialize(out, v.toArray(new Fun.Tuple4[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple4_serializer.deserialize(in, v.size());
@@ -222,7 +220,7 @@ Fun.COMPARATOR_NON_NULL,
     @Test public void tuple5_simple() throws IOException {
         List<Fun.Tuple5<String,Integer, Double, Long,String>> v = new ArrayList<Fun.Tuple5<String, Integer, Double,Long,String>>();
 
-        v.add(null);
+        
         v.add(Fun.t5("aa",1,1D,1L,"zz"));
         v.add(Fun.t5("aa",1,1D,2L,"zz"));
         v.add(Fun.t5("aa",1,2D,2L,"zz"));
@@ -232,11 +230,11 @@ Fun.COMPARATOR_NON_NULL,
         v.add(Fun.t5("zz",1,2D,2L,"zz"));
         v.add(Fun.t5("zz",2,2D,2L,"zz"));
         v.add(Fun.t5("zz",3,2D,2L,"zz"));
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple5_serializer.serialize(out,new Fun.Tuple5[0]);
+        tuple5_serializer.serialize(out,v.toArray(new Fun.Tuple5[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple5_serializer.deserialize(in, v.size());
@@ -247,7 +245,7 @@ Fun.COMPARATOR_NON_NULL,
     @Test public void tuple5() throws IOException {
         List<Fun.Tuple5<String,Integer,Double, Long,String>> v = new ArrayList<Fun.Tuple5<String, Integer,Double,Long,String>>();
 
-        v.add(null);
+        
 
         String[] ss = new String[]{"aa","bb","oper","zzz"};
         for(String s: ss){
@@ -262,10 +260,10 @@ Fun.COMPARATOR_NON_NULL,
             }
         }
 
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple5_serializer.serialize(out, new Fun.Tuple5[0]);
+        tuple5_serializer.serialize(out, v.toArray(new Fun.Tuple5[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple5_serializer.deserialize(in,v.size());
@@ -282,7 +280,7 @@ Fun.COMPARATOR_NON_NULL, Fun.COMPARATOR_NON_NULL,
     @Test public void tuple6_simple() throws IOException {
         List<Fun.Tuple6<String,Integer, Double, Long,String,String>> v = new ArrayList<Fun.Tuple6<String, Integer, Double,Long,String,String>>();
 
-        v.add(null);
+        
         v.add(Fun.t6("aa",1,1D,1L,"zz","asd"));
         v.add(Fun.t6("aa",1,1D,2L,"zz","asd"));
         v.add(Fun.t6("aa",1,2D,2L,"zz","asd"));
@@ -292,11 +290,11 @@ Fun.COMPARATOR_NON_NULL, Fun.COMPARATOR_NON_NULL,
         v.add(Fun.t6("zz",1,2D,2L,"zz","asd"));
         v.add(Fun.t6("zz",2,2D,2L,"zz","asd"));
         v.add(Fun.t6("zz",3,2D,2L,"zz","asd"));
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
 
-        tuple6_serializer.serialize(out, new Fun.Tuple6[0] );
+        tuple6_serializer.serialize(out, v.toArray(new Fun.Tuple6[0] ));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple6_serializer.deserialize(in,  v.size());
@@ -307,7 +305,7 @@ Fun.COMPARATOR_NON_NULL, Fun.COMPARATOR_NON_NULL,
     @Test public void tuple6() throws IOException {
         List<Fun.Tuple6<String,Integer,Double, Long,String,String>> v = new ArrayList<Fun.Tuple6<String, Integer,Double,Long,String,String>>();
 
-        v.add(null);
+        
 
         String[] ss = new String[]{"aa","bb","oper","zzz","asd"};
         for(String s: ss){
@@ -324,10 +322,10 @@ Fun.COMPARATOR_NON_NULL, Fun.COMPARATOR_NON_NULL,
             }
         }
 
-        v.add(null);
+        
 
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        tuple6_serializer.serialize(out, new Fun.Tuple6[0]);
+        tuple6_serializer.serialize(out, v.toArray(new Fun.Tuple6[0]));
 
         DataInput in = new DataIO.DataInputByteArray(out.copyBytes());
         Object[] nn = tuple6_serializer.deserialize(in,  v.size());
