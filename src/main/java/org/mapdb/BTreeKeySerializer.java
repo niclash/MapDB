@@ -67,6 +67,28 @@ public abstract class BTreeKeySerializer<KEY,KEY2, KEYS>{
 
     public abstract KEYS deleteKey(KEYS keys, int pos);
 
+    /** Convert object to string, even if it is primitive array */
+    static String toString(Object keys) {
+        if(keys instanceof long[])
+            return Arrays.toString((long[]) keys);
+        else if(keys instanceof int[])
+            return Arrays.toString((int[]) keys);
+        else if(keys instanceof byte[])
+            return Arrays.toString((byte[]) keys);
+        else if(keys instanceof char[])
+            return Arrays.toString((char[]) keys);
+        else if(keys instanceof float[])
+            return Arrays.toString((float[]) keys);
+        else if(keys instanceof double[])
+            return Arrays.toString((double[]) keys);
+        else  if(keys instanceof boolean[])
+            return Arrays.toString((boolean[]) keys);
+        else  if(keys instanceof Object[])
+            return Arrays.toString((Object[]) keys);
+        else
+            return keys.toString();
+    }
+
 
     /**
      * Basic Key Serializer which just writes data without applying any compression.

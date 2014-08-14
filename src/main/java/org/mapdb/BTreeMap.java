@@ -266,7 +266,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public long next() {return child[child.length-1];}
 
         @Override public String toString(){
-            return "Dir(K"+keys+", C"+Arrays.toString(child)+")";
+            return "Dir(K"+BTreeKeySerializer.toString(keys)+", C"+Arrays.toString(child)+", left="+leftEdge+", right="+rightEdge+")";
         }
         @Override public boolean isLeftEdge(){return leftEdge;}
         @Override public boolean isRightEdge(){return rightEdge;}
@@ -371,7 +371,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public long next() {return next;}
 
         @Override public String toString(){
-            return "Leaf(K"+keys+", V"+Arrays.toString(vals)+", L="+next+")";
+            return "Leaf(K"+BTreeKeySerializer.toString(keys)+", V"+Arrays.toString(vals)+", L="+next+", left="+leftEdge+", right="+rightEdge+")";
         }
 
 
@@ -1536,7 +1536,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         //now at leaf level
         LeafNode leaf = (LeafNode) A;
         //follow link until first matching node is found
-        final int comp = inclusive?1:0;
+        final int comp = inclusive?-1:0;
         while(true){
             for(int i=1;i<leaf.keysLen(keySerializer)-1;i++){
                 if(leaf.key(keySerializer,i)==null) continue;
