@@ -64,15 +64,15 @@ public class BTreeMapTest{
                     assertArrayEquals((Object[])l.keys, (Object[])l2.keys);
                     assertArrayEquals(l.vals, l2.vals);
                     assertEquals(l.next, l.next);
-                    assertEquals(l.isLeftEdge(), l2.isLeftEdge());
-                    assertEquals(l.isRightEdge(), l2.isRightEdge());
+                    assertEquals(l.leftEdge, l2.leftEdge);
+                    assertEquals(l.rightEdge, l2.rightEdge);
 
                     BTreeMap.DirNode d = new BTreeMap.DirNode(keyser,keys, child,left,right);
                     BTreeMap.DirNode d2 = (BTreeMap.DirNode) UtilsTest.clone(d, m.nodeSerializer);
                     assertArrayEquals((Object[])d.keys, (Object[])d2.keys);
                     assertArrayEquals(d.child, d2.child);
-                    assertEquals(d.isLeftEdge(), d2.isLeftEdge());
-                    assertEquals(d.isRightEdge(), d2.isRightEdge());
+                    assertEquals(d.leftEdge, d2.leftEdge);
+                    assertEquals(d.rightEdge, d2.rightEdge);
                 }
             }
         }
@@ -182,7 +182,7 @@ public class BTreeMapTest{
         assertArrayEquals(new Object[]{ 11}, (Object[])n.keys);
         assertArrayEquals(new Object[]{12}, n.vals);
         assertEquals(0, n.next);
-        assertTrue(n.isLeaf() && n.isLeftEdge() && n.isRightEdge());
+        assertTrue(n.isLeaf() && n.leftEdge && n.rightEdge);
     }
 
     @Test public void batch_insert(){

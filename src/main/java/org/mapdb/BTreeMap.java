@@ -200,48 +200,43 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
 
     /** common interface for BTree node */
-    public interface BNode{
-        boolean isLeaf();
-        boolean isLeftEdge();
-        boolean isRightEdge();
-        Object key(BTreeKeySerializer keyser, int index);
-        Object[] vals();
-        Object highKey(BTreeKeySerializer keyser);
-        long[] child();
-        long next();
+    public static abstract class BNode{
 
-        int keysLen(BTreeKeySerializer keyser);
-
-        void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException;
-
-        Object getKeys();
-
-        int compare(BTreeKeySerializer keyser, int pos1, int pos2);
-        int compare(BTreeKeySerializer keyser, int pos1, Object key);
-    }
-
-    public final static class DirNode implements BNode{
         final Object keys;
-        final long[] child;
         final boolean leftEdge;
         final boolean rightEdge;
 
-        DirNode(BTreeKeySerializer keyser, Object keys, long[] child, boolean leftEdge, boolean rightEdge) {
+        protected BNode(BTreeKeySerializer keyser, Object keys,boolean leftEdge, boolean rightEdge) {
             this.keys = keys;
-            this.child = child;
             this.leftEdge = leftEdge;
             this.rightEdge = rightEdge;
-
             assert(keyser.length(keys)==0||keyser.getKey(keys,0)!=null);
             assert(keyser.length(keys)<2||keyser.getKey(keys,keyser.length(keys)-1)!=null);
-            assert(keyser.length(keys)==child.length-(leftEdge?1:0)-(rightEdge?1:0));
         }
 
+        public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
+            keySerializer.serialize(out,keys);
+        }
 
+        public Object getKeys() {
+            return keys;
+        }
 
-        @Override public boolean isLeaf() { return false;}
+        public int compare(BTreeKeySerializer keyser, int pos1, int pos2) {
+            return keyser.comparator().compare(key(keyser,pos1), key(keyser,pos2));
+        }
 
-        @Override public Object key(BTreeKeySerializer keyser, int index){
+        public int compare(BTreeKeySerializer keyser, int pos1, Object key) {
+            return keyser.comparator().compare(key(keyser,pos1), key);
+        }
+
+        public Object highKey(BTreeKeySerializer keyser) {
+            if(rightEdge)
+                return null;
+            return keyser.getKey(keys,keyser.length(keys)-1);
+        }
+
+        public Object key(BTreeKeySerializer keyser, int index){
             if(rightEdge && index==keysLen(keyser)-1)
                 return null;
             if(leftEdge){
@@ -253,13 +248,36 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             return keyser.getKey(keys,index);
         }
 
+        public int keysLen(BTreeKeySerializer keyser){
+            return keyser.length(keys) + (rightEdge?1:0)+ (leftEdge?1:0);
+        }
+
+
+        abstract boolean isLeaf();
+        abstract Object[] vals();
+        abstract long[] child();
+        abstract long next();
+    }
+
+    public final static class DirNode extends BNode{
+        final Object keys;
+        final long[] child;
+
+
+        DirNode(BTreeKeySerializer keyser, Object keys, long[] child, boolean leftEdge, boolean rightEdge) {
+            super(keyser, keys,leftEdge, rightEdge);
+            this.keys = keys;
+            this.child = child;
+            assert(keyser.length(keys)==child.length-(leftEdge?1:0)-(rightEdge?1:0));
+        }
+
+
+
+        @Override public boolean isLeaf() { return false;}
+
         @Override public Object[] vals() { return null;}
 
-        @Override public Object highKey(BTreeKeySerializer keyser) {
-            if(rightEdge)
-                return null;
-            return keyser.getKey(keys,keyser.length(keys)-1);
-        }
+
 
         @Override public long[] child() { return child;}
 
@@ -268,34 +286,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         @Override public String toString(){
             return "Dir(K"+BTreeKeySerializer.toString(keys)+", C"+Arrays.toString(child)+", left="+leftEdge+", right="+rightEdge+")";
         }
-        @Override public boolean isLeftEdge(){return leftEdge;}
-        @Override public boolean isRightEdge(){return rightEdge;}
 
-        @Override public int keysLen(BTreeKeySerializer keyser){
-            return keyser.length(keys) + (rightEdge?1:0)+ (leftEdge?1:0);
-        }
 
-        @Override
-        public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
-            keySerializer.serialize(out,keys);
-        }
 
-        @Override
-        public Object getKeys() {
-            return keys;
-        }
-
-        @Override
-        public int compare(BTreeKeySerializer keyser, int pos1, int pos2) {
-            return keyser.comparator().compare(key(keyser,pos1), key(keyser,pos2));
-        }
-
-        @Override
-        public int compare(BTreeKeySerializer keyser, int pos1, Object key) {
-            return keyser.comparator().compare(key(keyser,pos1), key);
-        }
-
-        public BNode cloneExpand(BTreeKeySerializer keyser,int pos, Object key, long newChild) {
+        public DirNode cloneExpand(BTreeKeySerializer keyser,int pos, Object key, long newChild) {
             Object keys2 = keyser.putKey(keys, pos-(leftEdge?1:0), key);
             long[] child2 = arrayLongPut(child, pos, newChild);
             return new DirNode(keyser,keys2, child2,leftEdge,rightEdge);
@@ -326,46 +320,22 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     }
 
 
-    public final static class LeafNode implements BNode{
-        final Object keys;
+    public final static class LeafNode extends  BNode{
         final Object[] vals;
         final long next;
-        final boolean leftEdge;
-        final boolean rightEdge;
 
         LeafNode(BTreeKeySerializer keyser,Object keys, Object[] vals, long next, boolean leftEdge, boolean rightEdge) {
-            this.keys = keys;
+            super(keyser, keys, leftEdge, rightEdge);
             this.vals = vals;
             this.next = next;
-            this.leftEdge = leftEdge;
-            this.rightEdge = rightEdge;
 
-
-            assert(keyser.length(keys)==0||keyser.getKey(keys,0)!=null);
-            assert(keyser.length(keys)<2||keyser.getKey(keys,keyser.length(keys)-1)!=null);
             assert(vals==null||keyser.length(keys) == vals.length +(leftEdge?0:1) +(rightEdge?0:1));
         }
 
         @Override public boolean isLeaf() { return true;}
 
-        @Override
-        public Object key(BTreeKeySerializer keyser,int index){
-            if(rightEdge && index==keysLen(keyser)-1)
-                return null;
-            if(leftEdge){
-                if(index==0)
-                    return null;
-                index--;
-            }
-
-            return keyser.getKey(keys, index);
-        }
-
         @Override public Object[] vals() { return vals;}
 
-        @Override public Object highKey(BTreeKeySerializer keyser) {
-            return rightEdge? null : keyser.getKey(keys,keyser.length(keys)-1);
-        }
 
         @Override public long[] child() { return null;}
         @Override public long next() {return next;}
@@ -374,33 +344,6 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             return "Leaf(K"+BTreeKeySerializer.toString(keys)+", V"+Arrays.toString(vals)+", L="+next+", left="+leftEdge+", right="+rightEdge+")";
         }
 
-
-        @Override public boolean isLeftEdge(){return leftEdge;}
-        @Override public boolean isRightEdge(){return rightEdge;}
-
-
-        @Override public int keysLen(BTreeKeySerializer keyser){return keyser.length(keys) + (rightEdge?1:0)+ (leftEdge?1:0);}
-
-        @Override
-        public void serializeKeys(DataOutput out, BTreeKeySerializer keySerializer) throws IOException {
-            keySerializer.serialize(out, keys);
-        }
-
-        @Override
-        public Object getKeys() {
-            return keys;
-        }
-
-
-        @Override
-        public int compare(BTreeKeySerializer keyser, int pos1, int pos2) {
-            return keyser.comparator().compare(key(keyser,pos1), key(keyser,pos2));
-        }
-
-        @Override
-        public int compare(BTreeKeySerializer keyser, int pos1, Object key) {
-            return keyser.comparator().compare(key(keyser,pos1), key);
-        }
 
         public LeafNode cloneUpdateVal(BTreeKeySerializer keyser, int pos, Object value) {
             Object[] vals2 = vals.clone();
@@ -425,7 +368,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             return new LeafNode(keyser, keys2,vals2,next,leftEdge,rightEdge);
         }
 
-        public BNode cloneSplitRight(BTreeKeySerializer keyser, int pos, int splitPos, Object key, Object value) {
+        public LeafNode cloneSplitRight(BTreeKeySerializer keyser, int pos, int splitPos, Object key, Object value) {
             final Object keys2 = keyser.putKey(keys, pos-(leftEdge?1:0), key);
             final Object[] vals2 = arrayPut(vals, pos - 1, value);
 
@@ -441,7 +384,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         }
 
 
-        public BNode cloneSplitLeft(BTreeKeySerializer keyser,
+        public LeafNode cloneSplitLeft(BTreeKeySerializer keyser,
                   int pos, int splitPos, Object key, Object value, long nextNode) {
             Object keys2 = keyser.putKey(keys, pos-(leftEdge?1:0), key);
             Object[] vals2 = arrayPut(vals, pos-1, value);
@@ -505,8 +448,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             final int header =
                 (isLeaf ? LEAF_MASK : 0) |
-                (value.isLeftEdge() ? LEFT_MASK : 0) |
-                (value.isRightEdge() ? RIGHT_MASK : 0) |
+                (value.leftEdge ? LEFT_MASK : 0) |
+                (value.rightEdge ? RIGHT_MASK : 0) |
                 value.keysLen(keySerializer);
 
             out.writeShort(header);
@@ -524,7 +467,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     DataIO.packLong(out, child);
             }
 
-            int keysSize = nodeSize -(value.isRightEdge()?1:0)-(value.isLeftEdge()?1:0);
+            int keysSize = nodeSize -(value.rightEdge?1:0)-(value.leftEdge?1:0);
             if(keysSize>0)
                 value.serializeKeys(out, keySerializer);
 
