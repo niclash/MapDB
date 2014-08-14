@@ -656,7 +656,6 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         int len = node.keysLen(keySerializer);
         int right = node.key(keySerializer, len -1) == null
                 ? len -1 : len;
-        Object keys = node.getKeys();
 
         int middle;
 
