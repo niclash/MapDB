@@ -223,11 +223,19 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         }
 
         public int compare(BTreeKeySerializer keyser, int pos1, int pos2) {
-            return keyser.comparator().compare(key(keyser,pos1), key(keyser,pos2));
+            if(leftEdge){
+                pos1--;
+                pos2--;
+            }
+            return keyser.compare(keys,pos1,pos2);
         }
 
-        public int compare(BTreeKeySerializer keyser, int pos1, Object key) {
-            return keyser.comparator().compare(key(keyser,pos1), key);
+        public int compare(BTreeKeySerializer keyser, int pos, Object key) {
+            if(leftEdge){
+                pos--;
+            }
+
+            return keyser.compare(keys,pos, key);
         }
 
         public Object highKey(BTreeKeySerializer keyser) {
