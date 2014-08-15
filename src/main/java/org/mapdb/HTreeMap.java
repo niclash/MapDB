@@ -1574,7 +1574,7 @@ public class HTreeMap<K,V>   extends AbstractMap<K,V> implements ConcurrentMap<K
                 removePerSegment=640;
                 if(LOG.isLoggable(Level.FINE)){
                     LOG.log(Level.FINE, "HTreeMap store store size ({0,number,integer}) over limit," +
-                                    "will remove {2,number,integer} entries per segment",
+                                    "will remove {1,number,integer} entries per segment",
                             new Object[]{storeSize, removePerSegment});
                 }
             }
