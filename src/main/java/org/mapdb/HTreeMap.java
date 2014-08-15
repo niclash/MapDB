@@ -172,10 +172,10 @@ public class HTreeMap<K,V>   extends AbstractMap<K,V> implements ConcurrentMap<K
             out.writeShort(nulls);
 
             //write non null subarrays
-            for(int i = 0;i<16;i++){
-                if(value[i]!=null){
-                    assert(value[i].length==8);
-                    for(long l:value[i]){
+            for(long[] vali:value){
+                if(vali!=null){
+                    assert(vali.length==8);
+                    for(long l:vali){
                         DataIO.packLong(out, l);
                     }
                 }
