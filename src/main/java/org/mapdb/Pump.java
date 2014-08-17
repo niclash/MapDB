@@ -398,7 +398,7 @@ public final class Pump {
             if(leftEdge)
                 keys.remove(0);
             BTreeMap.LeafNode node = new BTreeMap.LeafNode(keySerializer,
-                    keys.toArray(),values.toArray() , nextNode,leftEdge,rightEdge);
+                    keys.toArray(),values.toArray() , nextNode,leftEdge,rightEdge, false);
             nextNode = engine.put(node,nodeSerializer);
             K nextKey = keys.get(0);
             keys.clear();
@@ -428,7 +428,7 @@ public final class Pump {
                     dirKeys.get(i).remove(0);
                 }
                 BTreeMap.DirNode dir = new BTreeMap.DirNode(keySerializer,
-                        dirKeys.get(i).toArray(), toLongArray(dirRecids.get(i)),leftEdge2,rightEdge2);
+                        dirKeys.get(i).toArray(), toLongArray(dirRecids.get(i)),leftEdge2,rightEdge2, false);
                 long dirRecid = engine.put(dir,nodeSerializer);
                 Object dirStart = dirKeys.get(i).get(0);
                 dirKeys.get(i).clear();
@@ -469,7 +469,7 @@ public final class Pump {
                 keys2.remove(0);
             }
             BTreeMap.DirNode dir = new BTreeMap.DirNode(keySerializer,
-                    keys2.toArray(), toLongArray(dirRecids.get(i)),leftEdge3,rightEdge3);
+                    keys2.toArray(), toLongArray(dirRecids.get(i)),leftEdge3,rightEdge3, false);
             long dirRecid = engine.put(dir,nodeSerializer);
             Object dirStart = keys2.get(0);
             dirKeys.get(i+1).add(dirStart);
@@ -496,7 +496,7 @@ public final class Pump {
             dirKeys.get(len).remove(0);
         }
         BTreeMap.DirNode dir = new BTreeMap.DirNode(keySerializer,
-                dirKeys.get(len).toArray(), toLongArray(dirRecids.get(len)),leftEdge4,rightEdge4);
+                dirKeys.get(len).toArray(), toLongArray(dirRecids.get(len)),leftEdge4,rightEdge4, false);
         long rootRecid = engine.put(dir, nodeSerializer);
         return engine.put(rootRecid,Serializer.LONG); //root recid
     }
