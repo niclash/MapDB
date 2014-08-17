@@ -101,12 +101,6 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
     protected static final Object EMPTY = new Object();
 
-    protected static final int LEAF_MASK = 1<<15;
-    protected static final int LEFT_MASK = 1<<14;
-    protected static final int RIGHT_MASK = 1<<13;
-    protected static final int SIZE_MASK = RIGHT_MASK - 1;
-
-
 
     /** recid under which reference to rootRecid is stored */
     protected final long rootRecidRef;
@@ -443,13 +437,24 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
     protected static final class NodeSerializer<A,B> implements  Serializer<BNode>{
 
+        protected static final int LEAF_MASK = 1<<15;
+        protected static final int LEFT_SHIFT = 14;
+        protected static final int LEFT_MASK = 1<< LEFT_SHIFT;
+        protected static final int RIGHT_SHIFT = 13;
+        protected static final int RIGHT_MASK = 1<< RIGHT_SHIFT;
+        protected static final int SIZE_MASK = RIGHT_MASK - 1;
+
+
         protected final boolean hasValues;
         protected final boolean valsOutsideNodes;
         protected final BTreeKeySerializer keySerializer;
         protected final Serializer<Object> valueSerializer;
         protected final int numberOfNodeMetas;
 
-        public NodeSerializer(boolean valsOutsideNodes, BTreeKeySerializer keySerializer, Serializer valueSerializer, int numberOfNodeMetas) {
+        public NodeSerializer(boolean valsOutsideNodes,
+                              BTreeKeySerializer keySerializer,
+                              Serializer valueSerializer,
+                              int numberOfNodeMetas) {
             assert(keySerializer!=null);
             this.hasValues = valueSerializer!=null;
             this.valsOutsideNodes = valsOutsideNodes;
@@ -548,32 +553,32 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             //first bite indicates leaf
             final boolean isLeaf = ((header& LEAF_MASK) != 0);
-            final boolean leftEdge = ((header& LEFT_MASK) != 0);
-            final boolean rightEdge = ((header& RIGHT_MASK) != 0);
+            final int left = (header& LEFT_MASK) >>LEFT_SHIFT;
+            final int right = (header& RIGHT_MASK) >>RIGHT_SHIFT;
 
             if(isLeaf){
-                return deserializeLeaf(in, size, leftEdge, rightEdge);
+                return deserializeLeaf(in, size, left, right);
             }else{
-                return deserializeDir(in, size, leftEdge, rightEdge);
+                return deserializeDir(in, size, left, right);
             }
         }
 
-        private BNode deserializeDir(final DataInput in, final int size, final boolean leftEdge, final boolean rightEdge) throws IOException {
+        private BNode deserializeDir(final DataInput in, final int size, final int left, final int right) throws IOException {
             final long[] child = new long[size];
             for(int i=0;i<size;i++)
                 child[i] = DataIO.unpackLong(in);
 
-            int arrayLen = size -(rightEdge?1:0)-(leftEdge?1:0);
+            int arrayLen = size -right-left;
             final Object keys =  arrayLen>0?
                     keySerializer.deserialize(in, arrayLen):
                     keySerializer.emptyKeys();
-            assert(keySerializer.length(keys)==size-(leftEdge?1:0)-(rightEdge?1:0));
-            return new DirNode(keySerializer,keys, child,leftEdge,rightEdge, false); //TODO TOO large here
+            assert(keySerializer.length(keys)==arrayLen);
+            return new DirNode(keySerializer,keys, child,left==1,right==1, false); //TODO TOO large here
          }
 
-        private BNode deserializeLeaf(final DataInput in, final int size, final boolean leftEdge, final boolean rightEdge) throws IOException {
+        private BNode deserializeLeaf(final DataInput in, final int size, final int left, final int right) throws IOException {
             final long next = DataIO.unpackLong(in);
-            int arrayLen = size -(rightEdge?1:0)-(leftEdge?1:0);
+            int arrayLen = size -right-left;
             final Object keys = arrayLen>0?
                     keySerializer.deserialize(in, arrayLen):
                     keySerializer.emptyKeys();
@@ -597,7 +602,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                         vals[i]=EMPTY;
                 }
             }
-            return new LeafNode(keySerializer,keys, vals, next,leftEdge,rightEdge, false); //TODO TOO large here
+            return new LeafNode(keySerializer,keys, vals, next,left==1,right==1, false); //TODO TOO large here
         }
 
         @Override
@@ -625,7 +630,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     int numberOfNodeMetas, boolean disableLocks) {
         if(maxNodeSize%2!=0) throw new IllegalArgumentException("maxNodeSize must be dividable by 2");
         if(maxNodeSize<6) throw new IllegalArgumentException("maxNodeSize too low");
-        if((maxNodeSize& SIZE_MASK) !=maxNodeSize) throw new IllegalArgumentException("maxNodeSize too high");
+        if((maxNodeSize& NodeSerializer.SIZE_MASK) !=maxNodeSize)
+            throw new IllegalArgumentException("maxNodeSize too high");
         if(rootRecidRef<=0||counterRecid<0 || numberOfNodeMetas<0) throw new IllegalArgumentException();
         if(keySerializer==null) throw new NullPointerException();
         SerializerBase.assertSerializable(keySerializer);
