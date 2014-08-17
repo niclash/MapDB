@@ -240,6 +240,17 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         }
 
 
+        /** @return 1 if is left edge, or 0*/
+        final public int leftEdgeInc(){
+            return flags&LEFT_MASK;
+        }
+
+
+        /** @return 1 if is right edge, or 0*/
+        final public int rightEdgeInc(){
+            return (flags&RIGHT_MASK)>>>1;
+        }
+
         final public boolean isTooLarge(){
             return (flags&TOO_LARGE_MASK)!=0;
         }
@@ -247,19 +258,15 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
 
         public int compare(BTreeKeySerializer keyser, int pos1, int pos2) {
-            if(isLeftEdge()){
-                pos1--;
-                pos2--;
-            }
+            final int leftInc = leftEdgeInc();
+            pos1-=leftInc;
+            pos2-=leftInc;
+
             return keyser.compare(keys,pos1,pos2);
         }
 
         public int compare(BTreeKeySerializer keyser, int pos, Object key) {
-            if(isLeftEdge()){
-                pos--;
-            }
-
-            return keyser.compare(keys,pos, key);
+            return keyser.compare(keys,pos-leftEdgeInc(), key);
         }
 
         public Object highKey(BTreeKeySerializer keyser) {
@@ -281,7 +288,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         }
 
         public int keysLen(BTreeKeySerializer keyser){
-            return keyser.length(keys) + (isRightEdge()?1:0)+ (isLeftEdge()?1:0);
+            return keyser.length(keys) + rightEdgeInc() + leftEdgeInc();
         }
 
 
@@ -300,7 +307,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             super(keyser, keys,leftEdge, rightEdge, tooLarge);
             this.keys = keys;
             this.child = child;
-            assert(keyser.length(keys)==child.length-(leftEdge?1:0)-(rightEdge?1:0));
+            assert(keyser.length(keys)==child.length-leftEdgeInc()-rightEdgeInc());
         }
 
 
@@ -322,31 +329,31 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
 
         public DirNode cloneExpand(BTreeKeySerializer keyser,int pos, Object key, long newChild) {
-            Object keys2 = keyser.putKey(keys, pos-(isLeftEdge()?1:0), key);
+            Object keys2 = keyser.putKey(keys, pos-leftEdgeInc(), key);
             long[] child2 = arrayLongPut(child, pos, newChild);
             return new DirNode(keyser,keys2, child2,isLeftEdge(),isRightEdge(), isTooLarge());
         }
 
         public DirNode cloneSplitRight(BTreeKeySerializer keyser,int pos, int splitPos, Object key, long newChild) {
-            final Object keys2 = keyser.putKey(keys, pos-(isLeftEdge()?1:0), key);
+            final Object keys2 = keyser.putKey(keys, pos-leftEdgeInc(), key);
             final long[] child2 = arrayLongPut(child, pos, newChild);
 
             //TODO optimize array allocation
             return new DirNode(keyser,
-                    keyser.copyOfRange(keys2, splitPos-(isLeftEdge()?1:0), keyser.length(keys2)),
+                    keyser.copyOfRange(keys2, splitPos-leftEdgeInc(), keyser.length(keys2)),
                     Arrays.copyOfRange(child2, splitPos, child2.length),false,isRightEdge(), false);
 
         }
 
         public DirNode cloneSplitLeft(BTreeKeySerializer keyser,
                        int pos, int splitPos, Object key, long newChild, long nextNode) {
-            final Object keys2 = keyser.putKey(keys, pos-(isLeftEdge()?1:0), key);
+            final Object keys2 = keyser.putKey(keys, pos-leftEdgeInc(), key);
             final long[] child2 = arrayLongPut(child, pos, newChild);
             long[] child3 = Arrays.copyOf(child2, splitPos+1);
             child2[splitPos] = nextNode;
             //TODO optimize array allocation
             return new DirNode(keyser,
-                    keyser.copyOfRange(keys2, 0,splitPos+1-(isLeftEdge()?1:0)),
+                    keyser.copyOfRange(keys2, 0,splitPos+1-leftEdgeInc()),
                     child3,isLeftEdge(),false,false);
         }
     }
@@ -361,7 +368,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             this.vals = vals;
             this.next = next;
 
-            assert(vals==null||keyser.length(keys) == vals.length +(leftEdge?0:1) +(rightEdge?0:1));
+            assert(vals==null||keyser.length(keys) == vals.length + 2 - leftEdgeInc() - rightEdgeInc());
         }
 
         @Override public boolean isLeaf() { return true;}
@@ -384,14 +391,14 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         }
 
         public LeafNode cloneExpand(BTreeKeySerializer keyser, int pos, Object key, Object value) {
-            Object keys2 = keyser.putKey(keys, pos - (isLeftEdge() ? 1 : 0), key);
+            Object keys2 = keyser.putKey(keys, pos - leftEdgeInc(), key);
             Object[] vals2 = arrayPut(vals, pos-1, value);
             return new LeafNode(keyser, keys2, vals2, next,isLeftEdge(),isRightEdge(), isTooLarge());
 
         }
 
         public LeafNode cloneRemove(BTreeKeySerializer keyser, int pos) {
-            int kpos = pos-(isLeftEdge()?1:0);
+            int kpos = pos-leftEdgeInc();
             Object keys2 = keyser.deleteKey(keys,kpos);
 
             Object[] vals2 = new Object[vals.length-1];
@@ -401,11 +408,11 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         }
 
         public LeafNode cloneSplitRight(BTreeKeySerializer keyser, int pos, int splitPos, Object key, Object value) {
-            final Object keys2 = keyser.putKey(keys, pos-(isLeftEdge()?1:0), key);
+            final Object keys2 = keyser.putKey(keys, pos-leftEdgeInc(), key);
             final Object[] vals2 = arrayPut(vals, pos - 1, value);
 
             //TODO optimize array allocation
-            Object keys3 = keyser.copyOfRange(keys2, splitPos-(isLeftEdge()?1:0), keyser.length(keys2));
+            Object keys3 = keyser.copyOfRange(keys2, splitPos-leftEdgeInc(), keyser.length(keys2));
             Object[] vals3 = Arrays.copyOfRange(vals2, splitPos, vals2.length);
 
             return new LeafNode(
@@ -418,9 +425,9 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
         public LeafNode cloneSplitLeft(BTreeKeySerializer keyser,
                   int pos, int splitPos, Object key, Object value, long nextNode) {
-            Object keys2 = keyser.putKey(keys, pos-(isLeftEdge()?1:0), key);
+            Object keys2 = keyser.putKey(keys, pos-leftEdgeInc(), key);
             Object[] vals2 = arrayPut(vals, pos-1, value);
-            int end = splitPos+2-(isLeftEdge()?1:0);
+            int end = splitPos+2-leftEdgeInc();
             keys2 = keyser.putKey(keys2, end-1, keyser.getKey(keys2,end-2));
             keys2 = keyser.copyOfRange(keys2, 0, end);
             vals2 = Arrays.copyOf(vals2, splitPos);
@@ -499,7 +506,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                     DataIO.packLong(out, child);
             }
 
-            int keysSize = nodeSize -(value.isRightEdge()?1:0)-(value.isLeftEdge()?1:0);
+            int keysSize = nodeSize -value.rightEdgeInc()-value.leftEdgeInc();
             if(keysSize>0)
                 value.serializeKeys(out, keySerializer);
 
