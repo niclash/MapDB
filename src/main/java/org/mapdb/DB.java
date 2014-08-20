@@ -571,6 +571,8 @@ public class DB implements Closeable {
 
         /** nodeSize maximal size of node, larger node causes overflow and creation of new BTree node. Use large number for small keys, use small number for large keys.*/
         public BTreeMapMaker nodeSize(int nodeSize){
+            if(nodeSize>=BTreeMap.NodeSerializer.SIZE_MASK)
+                throw new IllegalArgumentException("Too large max node size");
             this.nodeSize = nodeSize;
             return this;
         }
