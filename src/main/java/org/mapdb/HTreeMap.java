@@ -123,8 +123,16 @@ public class HTreeMap<K,V>   extends AbstractMap<K,V> implements ConcurrentMap<K
 
 
     protected final Serializer<LinkedNode<K,V>> LN_SERIALIZER = new Serializer<LinkedNode<K,V>>() {
+
+        /** used to check that every 64000 th element has consistent has befor and after (de)serialization*/
+        int serCounter = 0;
+
         @Override
         public void serialize(DataOutput out, LinkedNode<K,V> value) throws IOException {
+            if(((serCounter++ )& 0xFFFF)==0){
+                HTreeMap.this.assertHashConsistent(value.key,keySerializer);
+            }
+
             DataIO.packLong(out, value.next);
             if(expireFlag)
                 DataIO.packLong(out, value.expireLinkNodeRecid);
@@ -150,6 +158,21 @@ public class HTreeMap<K,V>   extends AbstractMap<K,V> implements ConcurrentMap<K
         }
 
     };
+
+    public static <K> void assertHashConsistent(K key, Serializer<K> serializer) throws IOException {
+        int hash = key.hashCode();
+        DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
+        serializer.serialize(out,key);
+        DataIO.DataInputByteArray in = new DataIO.DataInputByteArray(out.buf, 0);
+
+        K key2 = serializer.deserialize(in,-1);
+        if(hash!=key2.hashCode()){
+            throw new IllegalArgumentException("Key does not have consistent hash before and after deserialization. Class: "+key.getClass());
+        }
+        if(out.pos!=in.pos){
+            throw new IllegalArgumentException("Key has inconsistent serialization length. Class: "+key.getClass());
+        }
+    }
 
 
     protected static final Serializer<long[][]>DIR_SERIALIZER = new Serializer<long[][]>() {

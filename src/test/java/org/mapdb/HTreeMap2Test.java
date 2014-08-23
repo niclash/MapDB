@@ -3,7 +3,10 @@ package org.mapdb;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -673,6 +676,36 @@ public class HTreeMap2Test {
         Thread.sleep(2000);
 
         assertEquals(m.size(),500);
+    }
+
+
+    public static class AA implements Serializable{
+        final int val;
+
+        public AA(int val) {
+            this.val = val;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof AA && ((AA)obj).val == val;
+        }
+    }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void inconsistentHash(){
+        DB db = DBMaker.newMemoryDB()
+                .transactionDisable()
+                .make();
+
+        HTreeMap m = db.createHashMap("test")
+
+                .make();
+
+        for(int i=0;i<1e5;i++){
+            m.put(new AA(i),i);
+        }
     }
 }
 
