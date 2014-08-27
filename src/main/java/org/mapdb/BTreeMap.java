@@ -469,7 +469,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
             int nodeSize = value.keysLen(keySerializer);
             //first byte encodes if is leaf (first bite) and length (last seven bites)
-            assert(nodeSize<SIZE_MASK);// TODO max node size is 16000 or something
+            assert(nodeSize<SIZE_MASK);
             assert(!(!isLeaf && value.child().length!= value.keysLen(keySerializer))): value.toString();
             assert(!(isLeaf && hasValues && value.vals().length!= value.keysLen(keySerializer)-2));
             assert(!(!isLeaf && value.highKey(keySerializer)!=null && value.child()[value.child().length-1]==0));
