@@ -130,7 +130,7 @@ public class HTreeMap<K,V>   extends AbstractMap<K,V> implements ConcurrentMap<K
         @Override
         public void serialize(DataOutput out, LinkedNode<K,V> value) throws IOException {
             if(((serCounter++ )& 0xFFFF)==0){
-                HTreeMap.this.assertHashConsistent(value.key,keySerializer);
+                assertHashConsistent(value.key);
             }
 
             DataIO.packLong(out, value.next);
@@ -159,15 +159,18 @@ public class HTreeMap<K,V>   extends AbstractMap<K,V> implements ConcurrentMap<K
 
     };
 
-    public static <K> void assertHashConsistent(K key, Serializer<K> serializer) throws IOException {
-        int hash = key.hashCode();
+    private final  void assertHashConsistent(K key) throws IOException {
+        int hash = hasher.hashCode(key);
         DataIO.DataOutputByteArray out = new DataIO.DataOutputByteArray();
-        serializer.serialize(out,key);
+        keySerializer.serialize(out,key);
         DataIO.DataInputByteArray in = new DataIO.DataInputByteArray(out.buf, 0);
 
-        K key2 = serializer.deserialize(in,-1);
-        if(hash!=key2.hashCode()){
+        K key2 = keySerializer.deserialize(in,-1);
+        if(hash!=hasher.hashCode(key2)){
             throw new IllegalArgumentException("Key does not have consistent hash before and after deserialization. Class: "+key.getClass());
+        }
+        if(!hasher.equals(key,key2)){
+            throw new IllegalArgumentException("Key does not have consistent equals before and after deserialization. Class: "+key.getClass());
         }
         if(out.pos!=in.pos){
             throw new IllegalArgumentException("Key has inconsistent serialization length. Class: "+key.getClass());
