@@ -422,7 +422,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             Object keys2 = keyser.putKey(keys, pos-leftEdgeInc(), key);
             Object[] vals2 = arrayPut(vals, pos-1, value);
             int end = splitPos+2-leftEdgeInc();
-            keys2 = keyser.putKey(keys2, end-1, keyser.getKey(keys2,end-2));
+            keys2 = keyser.putKey(keys2, end - 1, keyser.getKey(keys2, end - 2));
             keys2 = keyser.copyOfRange(keys2, 0, end);
             vals2 = Arrays.copyOf(vals2, splitPos);
             //TODO optimize array allocation
@@ -715,7 +715,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
 
     @Override
 	public V get(Object key){
-    	return (V) get(keySerializer.preDigestKey(key), true);
+    	return (V) get(key, true);
     }
 
     protected Object get(Object key, boolean expandValue) {
@@ -773,7 +773,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     }
 
     protected V put2(final K key, final V value2, final boolean putOnlyIfAbsent){
-        Object v = keySerializer.preDigestKey(key);
+        Object  v = key;
 
         V value = value2;
         if(valsOutsideNodes){
@@ -897,7 +897,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 if((current != rootRecid)){ //is not root
                     unlock(nodeLocks, current);
                     p = q;
-                    v = (K) A.highKey(keySerializer);
+                    v =  A.highKey(keySerializer);
                     level = level+1;
                     if(stackPos!=-1){ //if stack is not empty
                         current = stackVals[stackPos--];
@@ -961,11 +961,10 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
             if(lo==null){
                 pointToStart();
             }else{
-                Fun.Tuple2<Integer, LeafNode> l = m.findLargerNode(m.keySerializer.preDigestKey(lo), loInclusive);
+                Fun.Tuple2<Integer, LeafNode> l = m.findLargerNode(lo, loInclusive);
                 currentPos = l!=null? l.a : -1;
                 currentLeaf = l!=null ? l.b : null;
             }
-            hi = m.keySerializer.preDigestKey(hi);
             this.hi = hi;
             this.hiInclusive = hiInclusive;
             if(hi!=null && currentLeaf!=null){
@@ -1052,10 +1051,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
         return remove2(key, null);
     }
 
-    private V remove2(final Object key2, final Object value) {
+    private V remove2(final Object key, final Object value) {
         long current = engine.get(rootRecidRef, Serializer.LONG);
-
-        Object key = keySerializer.preDigestKey(key2);
 
         BNode A = engine.get(current, nodeSerializer);
         while(!A.isLeaf()){
@@ -1088,7 +1085,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
                 A = ((LeafNode)A).cloneRemove(keySerializer,pos);
                 assert(nodeLocks.get(current)==Thread.currentThread());
                 engine.update(current, A, nodeSerializer);
-                notify((K)key2, (V)oldVal, null);
+                notify((K)key, (V)oldVal, null);
                 unlock(nodeLocks, current);
                 return (V) oldVal;
             }else{
@@ -1237,9 +1234,8 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
     }
 
     @Override
-    public boolean replace(final K key2, final V oldValue, final V newValue) {
-        if(key2 == null || oldValue == null || newValue == null ) throw new NullPointerException();
-        Object key = keySerializer.preDigestKey(key2);
+    public boolean replace(final K key, final V oldValue, final V newValue) {
+        if(key == null || oldValue == null || newValue == null ) throw new NullPointerException();
 
         long current = engine.get(rootRecidRef, Serializer.LONG);
 
@@ -1271,7 +1267,7 @@ public class BTreeMap<K,V> extends AbstractMap<K,V>
            Object val  = leaf.vals[pos-1];
             val = valExpand(val);
             if(oldValue.equals(val)){
-                notify(key2, oldValue, newValue);
+                notify(key, oldValue, newValue);
                 Object newVal2 = newValue;
                 if(valsOutsideNodes){
                     long recid = engine.put(newValue, valueSerializer);
