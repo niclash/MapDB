@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import org.mapdb.impl.Atomic;
+import org.mapdb.impl.Fun;
 
 /**
  * Binding is simple yet powerful way to keep secondary collection synchronized with primary collection.
@@ -111,7 +113,7 @@ public final class Bind {
     }
 
     /**
-     * Binds {@link Atomic.Long} to Primary Map so the Atomic.Long contains size of Map.
+     * Binds {@link org.mapdb.impl.Atomic.Long} to Primary Map so the Atomic.Long contains size of Map.
      * `Atomic.Long` is incremented on each insert and decremented on each entry removal.
      * MapDB collections usually do not keep their size, but require complete traversal to count items.
      *
@@ -124,8 +126,8 @@ public final class Bind {
      *
      * NOTE: {@link BTreeMap} and {@link HTreeMap} already supports this directly as optional parameter named `counter`.
      * In that case all calls to `Map.size()` are forwarded to underlying counter. Check parameters at
-     * {@link DB#createHashMap(String)} and
-     * {@link DB#createTreeMap(String)}
+     * {@link org.mapdb.impl.DbImpl#createHashMap(String)} and
+     * {@link org.mapdb.impl.DbImpl#createTreeMap(String)}
      *
      *
      * @param map primary map whose size needs to be tracked

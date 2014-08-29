@@ -1,11 +1,11 @@
 package examples;
 
-import org.mapdb.DB;
-import org.mapdb.DBMaker;
-
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
 
 /**
  * Demonstrates how BTree parameters affects performance. BTreeMap has two key parameters
@@ -33,66 +33,65 @@ import java.util.Random;
  *   120      |       73 s   |       98 s   |    49 s   |
  * </pre>
  */
-public class TreeMap_Performance_Tunning {
+public class TreeMap_Performance_Tunning
+{
 
+    static final int[] nodeSizes = { 6, 18, 32, 64, 120 };
 
-    static final int[] nodeSizes = {6, 18, 32, 64, 120};
-
-
-    public static void main(String[] args) {
+    public static void main( String[] args )
+        throws IOException
+    {
         Random r = new Random();
 
+        System.out.println( " Node size |  small vals  |  large vals  |  large vals outside node" );
 
+        for( int nodeSize : nodeSizes )
+        {
 
-        System.out.println(" Node size |  small vals  |  large vals  |  large vals outside node" );
+            System.out.print( "    " + nodeSize + "      |" );
 
-        for(int nodeSize:nodeSizes){
+            for( int j = 0; j < 3; j++ )
+            {
 
-            System.out .print("    "+nodeSize+"      |");
-
-            for(int j=0;j<3;j++){
-
-                boolean useSmallValues = (j==0);
-                boolean valueOutsideOfNodes = (j==2);
+                boolean useSmallValues = ( j == 0 );
+                boolean valueOutsideOfNodes = ( j == 2 );
 
                 DB db = DBMaker
-                        .newFileDB(new File("/mnt/big/adsasd"))
-                        .deleteFilesAfterClose()
-                        .closeOnJvmShutdown()
-                        .transactionDisable()
-                        .cacheSize(10) //use small cache size, to simulate much larger store with relatively small cache.
-                        .make();
-
-
-                Map<Long,String> map =
-                        (valueOutsideOfNodes?
-                                (db.createTreeMap("test").valuesOutsideNodesEnable()):
-                                db.createTreeMap("test"))
-                    .nodeSize(nodeSize)
+                    .newFileDB( new File( "/mnt/big/adsasd" ) )
+                    .deleteFilesAfterClose()
+                    .closeOnJvmShutdown()
+                    .transactionDisable()
+                    .cacheSize( 10 ) //use small cache size, to simulate much larger store with relatively small cache.
                     .make();
+
+                Map<Long, String> map =
+                    ( valueOutsideOfNodes ?
+                      ( db.createTreeMap( "test" ).valuesOutsideNodesEnable() ) :
+                      db.createTreeMap( "test" ) )
+                        .nodeSize( nodeSize )
+                        .make();
 
                 long startTime = System.currentTimeMillis();
 
-                for(int i=0;i<1e6;i++){
+                for( int i = 0; i < 1e6; i++ )
+                {
                     long key = r.nextLong();
-                    String value =  useSmallValues?
-                            //small value
-                            "abc"+key:
-                            //large value
-                            "qwdkqwdoqpwfwe-09fewkljklcejewfcklajewjkleawckjlaweklcwelkcwecklwecjwekecklwecklaa"
-                                    +"kvlskldvklsdklcklsdvkdflvvvvvvvvvvvvvvvvvvvvvvvsl;kzlkvlksdlkvklsdklvkldsklk"
-                                    +key;
-                    map.put(key, value);
+                    String value = useSmallValues ?
+                                   //small value
+                                   "abc" + key :
+                                   //large value
+                                   "qwdkqwdoqpwfwe-09fewkljklcejewfcklajewjkleawckjlaweklcwelkcwecklwecjwekecklwecklaa"
+                                   + "kvlskldvklsdklcklsdvkdflvvvvvvvvvvvvvvvvvvvvvvvsl;kzlkvlksdlkvklsdklvkldsklk"
+                                   + key;
+                    map.put( key, value );
                 }
 
-                System.out.print("    ");
-                System.out.print((System.currentTimeMillis()-startTime)/1000+" s");
-                System.out.print("   |");
+                System.out.print( "    " );
+                System.out.print( ( System.currentTimeMillis() - startTime ) / 1000 + " s" );
+                System.out.print( "   |" );
                 db.close();
             }
-            System.out.println("");
+            System.out.println( "" );
         }
     }
-
-
 }

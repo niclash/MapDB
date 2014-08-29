@@ -1,6 +1,14 @@
 package org.mapdb;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 
 /**
@@ -11,255 +19,309 @@ import java.util.concurrent.ConcurrentNavigableMap;
  * that contract.
  *
  * @author Jared Levy
- *
  */
 public class BTreeMapTest3
-        extends ConcurrentMapInterfaceTest<Integer, String> {
+    extends ConcurrentMapInterfaceTest<Integer, String>
+{
 
-    public BTreeMapTest3() {
-        super(false, false, true, true, true, true, false);
+    public BTreeMapTest3()
+    {
+        super( false, false, true, true, true, true, false );
     }
 
-
     @Override
-    protected Integer getKeyNotInPopulatedMap() throws UnsupportedOperationException {
+    protected Integer getKeyNotInPopulatedMap()
+        throws UnsupportedOperationException
+    {
         return -100;
     }
 
     @Override
-    protected String getValueNotInPopulatedMap() throws UnsupportedOperationException {
+    protected String getValueNotInPopulatedMap()
+        throws UnsupportedOperationException
+    {
         return "XYZ";
     }
 
     @Override
-    protected String getSecondValueNotInPopulatedMap() throws UnsupportedOperationException {
+    protected String getSecondValueNotInPopulatedMap()
+        throws UnsupportedOperationException
+    {
         return "ASD";
     }
 
     @Override
-    protected ConcurrentNavigableMap<Integer, String> makeEmptyMap() throws UnsupportedOperationException {
-        return DBMaker.newMemoryDB().make().getTreeMap("test");
+    protected ConcurrentNavigableMap<Integer, String> makeEmptyMap()
+        throws UnsupportedOperationException
+    {
+        return DBMaker.newMemoryDB().make().getTreeMap( "test" );
     }
 
     @Override
-    protected ConcurrentNavigableMap<Integer, String> makePopulatedMap() throws UnsupportedOperationException {
+    protected ConcurrentNavigableMap<Integer, String> makePopulatedMap()
+        throws UnsupportedOperationException
+    {
         ConcurrentNavigableMap<Integer, String> map = makeEmptyMap();
-        for (int i = 0; i < 100; i++){
-            if(i%11==0||i%7==0) continue;
+        for( int i = 0; i < 100; i++ )
+        {
+            if( i % 11 == 0 || i % 7 == 0 )
+            {
+                continue;
+            }
 
-            map.put(i, "aa" + i);
+            map.put( i, "aa" + i );
         }
         return map;
     }
+
     @Override
-    protected ConcurrentNavigableMap<Integer, String> makeEitherMap() {
-        try {
+    protected ConcurrentNavigableMap<Integer, String> makeEitherMap()
+    {
+        try
+        {
             return makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return makeEmptyMap();
         }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" }) // Needed for null comparator
-    public void testOrdering() {
+    public void testOrdering()
+    {
         final SortedMap<Integer, String> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
         Iterator<Integer> iterator = map.keySet().iterator();
         Integer prior = iterator.next();
         Comparator<? super Integer> comparator = map.comparator();
-        while (iterator.hasNext()) {
+        while( iterator.hasNext() )
+        {
             Integer current = iterator.next();
-            if (comparator == null) {
+            if( comparator == null )
+            {
                 Comparable comparable = (Comparable) prior;
-                assertTrue(comparable.compareTo(current) < 0);
-            } else {
-                assertTrue(map.comparator().compare(prior, current) < 0);
+                assertTrue( comparable.compareTo( current ) < 0 );
+            }
+            else
+            {
+                assertTrue( map.comparator().compare( prior, current ) < 0 );
             }
             current = prior;
         }
     }
 
-
-
-    public void testFirstKeyNonEmpty() {
+    public void testFirstKeyNonEmpty()
+    {
         final SortedMap<Integer, String> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
         Integer expected = map.keySet().iterator().next();
-        assertEquals(expected, map.firstKey());
-        assertInvariants(map);
+        assertEquals( expected, map.firstKey() );
+        assertInvariants( map );
     }
 
-
-    public void testLastKeyNonEmpty() {
+    public void testLastKeyNonEmpty()
+    {
         final SortedMap<Integer, String> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
         Integer expected = null;
-        for (Integer key : map.keySet()) {
+        for( Integer key : map.keySet() )
+        {
             expected = key;
         }
-        assertEquals(expected, map.lastKey());
-        assertInvariants(map);
+        assertEquals( expected, map.lastKey() );
+        assertInvariants( map );
     }
 
-    private static <E> List<E> toList(Collection<E> collection) {
-        return new ArrayList<E>(collection);
+    private static <E> List<E> toList( Collection<E> collection )
+    {
+        return new ArrayList<E>( collection );
     }
 
     private static <E> List<E> subListSnapshot(
-            List<E> list, int fromIndex, int toIndex) {
+        List<E> list, int fromIndex, int toIndex
+    )
+    {
         List<E> subList = new ArrayList<E>();
-        for (int i = fromIndex; i < toIndex; i++) {
-            subList.add(list.get(i));
+        for( int i = fromIndex; i < toIndex; i++ )
+        {
+            subList.add( list.get( i ) );
         }
-        return Collections.unmodifiableList(subList);
+        return Collections.unmodifiableList( subList );
     }
 
-    public void testHeadMap() {
+    public void testHeadMap()
+    {
         final NavigableMap<Integer, String> map;
-        try {
+        try
+        {
             map = makeEitherMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        List<Map.Entry<Integer, String>> list = toList(map.entrySet());
-        for (int i = 0; i < list.size(); i++) {
-            List<Map.Entry<Integer, String>> expected = subListSnapshot(list, 0, i);
-            SortedMap<Integer, String> headMap = map.headMap(list.get(i).getKey());
-            assertEquals(expected, toList(headMap.entrySet()));
+        List<Map.Entry<Integer, String>> list = toList( map.entrySet() );
+        for( int i = 0; i < list.size(); i++ )
+        {
+            List<Map.Entry<Integer, String>> expected = subListSnapshot( list, 0, i );
+            SortedMap<Integer, String> headMap = map.headMap( list.get( i ).getKey() );
+            assertEquals( expected, toList( headMap.entrySet() ) );
         }
 
-        for (int i = 0; i < list.size(); i++) {
-            List<Map.Entry<Integer, String>> expected = subListSnapshot(list, 0, i+1);
-            SortedMap<Integer, String> headMap = map.headMap(list.get(i).getKey(),true);
-            assertEquals(expected, toList(headMap.entrySet()));
+        for( int i = 0; i < list.size(); i++ )
+        {
+            List<Map.Entry<Integer, String>> expected = subListSnapshot( list, 0, i + 1 );
+            SortedMap<Integer, String> headMap = map.headMap( list.get( i ).getKey(), true );
+            assertEquals( expected, toList( headMap.entrySet() ) );
         }
 
-        for (int i = 0; i < list.size(); i++) {
-            List<Map.Entry<Integer, String>> expected = subListSnapshot(list, 0, i);
-            SortedMap<Integer, String> headMap = map.headMap(list.get(i).getKey(),false);
-            assertEquals(expected, toList(headMap.entrySet()));
+        for( int i = 0; i < list.size(); i++ )
+        {
+            List<Map.Entry<Integer, String>> expected = subListSnapshot( list, 0, i );
+            SortedMap<Integer, String> headMap = map.headMap( list.get( i ).getKey(), false );
+            assertEquals( expected, toList( headMap.entrySet() ) );
         }
-
-
     }
 
-
-
-    public void testTailMap() {
+    public void testTailMap()
+    {
         final NavigableMap<Integer, String> map;
-        try {
+        try
+        {
             map = makeEitherMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        List<Map.Entry<Integer, String>> list = toList(map.entrySet());
-        for (int i = 0; i < list.size(); i++) {
-            List<Map.Entry<Integer, String>> expected = subListSnapshot(list, i, list.size());
-            SortedMap<Integer, String> tailMap = map.tailMap(list.get(i).getKey());
-            assertEquals(expected, toList(tailMap.entrySet()));
+        List<Map.Entry<Integer, String>> list = toList( map.entrySet() );
+        for( int i = 0; i < list.size(); i++ )
+        {
+            List<Map.Entry<Integer, String>> expected = subListSnapshot( list, i, list.size() );
+            SortedMap<Integer, String> tailMap = map.tailMap( list.get( i ).getKey() );
+            assertEquals( expected, toList( tailMap.entrySet() ) );
         }
 
-        for (int i = 0; i < list.size(); i++) {
-            List<Map.Entry<Integer, String>> expected = subListSnapshot(list, i, list.size());
-            SortedMap<Integer, String> tailMap = map.tailMap(list.get(i).getKey(),true);
-            assertEquals(expected, toList(tailMap.entrySet()));
+        for( int i = 0; i < list.size(); i++ )
+        {
+            List<Map.Entry<Integer, String>> expected = subListSnapshot( list, i, list.size() );
+            SortedMap<Integer, String> tailMap = map.tailMap( list.get( i ).getKey(), true );
+            assertEquals( expected, toList( tailMap.entrySet() ) );
         }
 
-        for (int i = 0; i < list.size(); i++) {
-            List<Map.Entry<Integer, String>> expected = subListSnapshot(list, i+1, list.size());
-            SortedMap<Integer, String> tailMap = map.tailMap(list.get(i).getKey(),false);
-            assertEquals(expected, toList(tailMap.entrySet()));
+        for( int i = 0; i < list.size(); i++ )
+        {
+            List<Map.Entry<Integer, String>> expected = subListSnapshot( list, i + 1, list.size() );
+            SortedMap<Integer, String> tailMap = map.tailMap( list.get( i ).getKey(), false );
+            assertEquals( expected, toList( tailMap.entrySet() ) );
         }
-
-
     }
 
-
-    public void testSubMap() {
+    public void testSubMap()
+    {
         final NavigableMap<Integer, String> map;
-        try {
+        try
+        {
             map = makeEitherMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        List<Map.Entry<Integer, String>> list = toList(map.entrySet());
-        for (int i = 0; i < list.size(); i++) {
-            for (int j = i; j < list.size(); j++) {
-                List<Map.Entry<Integer, String>> expected = subListSnapshot(list, i, j);
+        List<Map.Entry<Integer, String>> list = toList( map.entrySet() );
+        for( int i = 0; i < list.size(); i++ )
+        {
+            for( int j = i; j < list.size(); j++ )
+            {
+                List<Map.Entry<Integer, String>> expected = subListSnapshot( list, i, j );
                 SortedMap<Integer, String> subMap
-                        = map.subMap(list.get(i).getKey(), list.get(j).getKey());
-                assertEquals(expected, toList(subMap.entrySet()));
-                assertEquals(expected.size(), subMap.size());
-                assertEquals(expected.size(), subMap.keySet().size());
-                assertEquals(expected.size(), subMap.entrySet().size());
-                assertEquals(expected.size(), subMap.values().size());
+                    = map.subMap( list.get( i ).getKey(), list.get( j ).getKey() );
+                assertEquals( expected, toList( subMap.entrySet() ) );
+                assertEquals( expected.size(), subMap.size() );
+                assertEquals( expected.size(), subMap.keySet().size() );
+                assertEquals( expected.size(), subMap.entrySet().size() );
+                assertEquals( expected.size(), subMap.values().size() );
             }
         }
 
-        for (int i = 0; i < list.size(); i++) {
-            for (int j = i; j < list.size(); j++) {
-                List<Map.Entry<Integer, String>> expected = subListSnapshot(list, i, j+1);
+        for( int i = 0; i < list.size(); i++ )
+        {
+            for( int j = i; j < list.size(); j++ )
+            {
+                List<Map.Entry<Integer, String>> expected = subListSnapshot( list, i, j + 1 );
                 SortedMap<Integer, String> subMap
-                        = map.subMap(list.get(i).getKey(), true, list.get(j).getKey(), true);
-                assertEquals(expected, toList(subMap.entrySet()));
-                assertEquals(expected.size(), subMap.size());
-                assertEquals(expected.size(), subMap.keySet().size());
-                assertEquals(expected.size(), subMap.entrySet().size());
-                assertEquals(expected.size(), subMap.values().size());
+                    = map.subMap( list.get( i ).getKey(), true, list.get( j ).getKey(), true );
+                assertEquals( expected, toList( subMap.entrySet() ) );
+                assertEquals( expected.size(), subMap.size() );
+                assertEquals( expected.size(), subMap.keySet().size() );
+                assertEquals( expected.size(), subMap.entrySet().size() );
+                assertEquals( expected.size(), subMap.values().size() );
             }
         }
 
-
-        for (int i = 0; i < list.size(); i++) {
-            for (int j = i; j < list.size(); j++) {
-                List<Map.Entry<Integer, String>> expected = subListSnapshot(list, i+1, j);
+        for( int i = 0; i < list.size(); i++ )
+        {
+            for( int j = i; j < list.size(); j++ )
+            {
+                List<Map.Entry<Integer, String>> expected = subListSnapshot( list, i + 1, j );
                 SortedMap<Integer, String> subMap
-                        = map.subMap(list.get(i).getKey(), false, list.get(j).getKey(), false);
-                assertEquals(expected, toList(subMap.entrySet()));
-                assertEquals(expected.size(), subMap.size());
-                assertEquals(expected.size(), subMap.keySet().size());
-                assertEquals(expected.size(), subMap.entrySet().size());
-                assertEquals(expected.size(), subMap.values().size());
+                    = map.subMap( list.get( i ).getKey(), false, list.get( j ).getKey(), false );
+                assertEquals( expected, toList( subMap.entrySet() ) );
+                assertEquals( expected.size(), subMap.size() );
+                assertEquals( expected.size(), subMap.keySet().size() );
+                assertEquals( expected.size(), subMap.entrySet().size() );
+                assertEquals( expected.size(), subMap.values().size() );
             }
         }
-
-
-
     }
 
-    public void testSubMapIllegal() {
+    public void testSubMapIllegal()
+    {
         final SortedMap<Integer, String> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        if (map.size() < 2) {
+        if( map.size() < 2 )
+        {
             return;
         }
         Iterator<Integer> iterator = map.keySet().iterator();
         Integer first = iterator.next();
         Integer second = iterator.next();
-        try {
-            map.subMap(second, first);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
+        try
+        {
+            map.subMap( second, first );
+            fail( "Expected IllegalArgumentException" );
+        }
+        catch( IllegalArgumentException expected )
+        {
         }
     }
-
-
-
-
 }

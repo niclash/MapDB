@@ -16,10 +16,17 @@
 
 package org.mapdb;
 
-import junit.framework.TestCase;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import junit.framework.TestCase;
 
 import static java.util.Collections.singleton;
 
@@ -31,9 +38,11 @@ import static java.util.Collections.singleton;
  *
  * @param <K> the type of keys used by the maps under test
  * @param <V> the type of mapped values used the maps under test
+ *
  * @author George van den Driessche
  */
-public abstract class MapInterfaceTest<K, V> extends TestCase {
+public abstract class MapInterfaceTest<K, V> extends TestCase
+{
     protected final boolean supportsPut;
     protected final boolean supportsRemove;
     protected final boolean supportsClear;
@@ -42,61 +51,65 @@ public abstract class MapInterfaceTest<K, V> extends TestCase {
     protected final boolean supportsIteratorRemove;
     protected final boolean supportsEntrySetValue;
 
-
     /**
      * Creates a new, empty instance of the class under test.
      *
      * @return a new, empty map instance.
+     *
      * @throws UnsupportedOperationException if it's not possible to make an
      *                                       empty instance of the class under test.
      */
     protected abstract Map<K, V> makeEmptyMap()
-            throws UnsupportedOperationException;
+        throws UnsupportedOperationException;
 
     /**
      * Creates a new, non-empty instance of the class under test.
      *
      * @return a new, non-empty map instance.
+     *
      * @throws UnsupportedOperationException if it's not possible to make a
      *                                       non-empty instance of the class under test.
      */
     protected abstract Map<K, V> makePopulatedMap()
-            throws UnsupportedOperationException;
+        throws UnsupportedOperationException;
 
     /**
      * Creates a new key that is not expected to be found
      * in {@link #makePopulatedMap()}.
      *
      * @return a key.
+     *
      * @throws UnsupportedOperationException if it's not possible to make a key
      *                                       that will not be found in the map.
      */
     protected abstract K getKeyNotInPopulatedMap()
-            throws UnsupportedOperationException;
+        throws UnsupportedOperationException;
 
     /**
      * Creates a new value that is not expected to be found
      * in {@link #makePopulatedMap()}.
      *
      * @return a value.
+     *
      * @throws UnsupportedOperationException if it's not possible to make a value
      *                                       that will not be found in the map.
      */
     protected abstract V getValueNotInPopulatedMap()
-            throws UnsupportedOperationException;
-
+        throws UnsupportedOperationException;
 
     /**
      * Constructor with an explicit {@code supportsIteratorRemove} parameter.
      */
     protected MapInterfaceTest(
-            boolean allowsNullKeys,
-            boolean allowsNullValues,
-            boolean supportsPut,
-            boolean supportsRemove,
-            boolean supportsClear,
-            boolean supportsIteratorRemove,
-            boolean supportsEntrySetValue) {
+        boolean allowsNullKeys,
+        boolean allowsNullValues,
+        boolean supportsPut,
+        boolean supportsRemove,
+        boolean supportsClear,
+        boolean supportsIteratorRemove,
+        boolean supportsEntrySetValue
+    )
+    {
         this.supportsPut = supportsPut;
         this.supportsRemove = supportsRemove;
         this.supportsClear = supportsClear;
@@ -104,7 +117,6 @@ public abstract class MapInterfaceTest<K, V> extends TestCase {
         this.allowsNullValues = allowsNullValues;
         this.supportsIteratorRemove = supportsIteratorRemove;
         this.supportsEntrySetValue = supportsEntrySetValue;
-
     }
 
     /**
@@ -113,22 +125,32 @@ public abstract class MapInterfaceTest<K, V> extends TestCase {
      *
      * @return a new map instance.
      */
-    protected Map<K, V> makeEitherMap() {
-        try {
+    protected Map<K, V> makeEitherMap()
+    {
+        try
+        {
             return makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return makeEmptyMap();
         }
     }
 
-    protected final boolean supportsValuesHashCode(Map<K, V> map) {
+    protected final boolean supportsValuesHashCode( Map<K, V> map )
+    {
         // get the first non-null value
         Collection<V> values = map.values();
-        for (V value : values) {
-            if (value != null) {
-                try {
+        for( V value : values )
+        {
+            if( value != null )
+            {
+                try
+                {
                     value.hashCode();
-                } catch (Exception e) {
+                }
+                catch( Exception e )
+                {
                     return false;
                 }
                 return true;
@@ -143,91 +165,99 @@ public abstract class MapInterfaceTest<K, V> extends TestCase {
      * specific implementations.
      *
      * @param map the map to check.
+     *
      * @see #assertMoreInvariants
      */
-    protected final void assertInvariants(Map<K, V> map) {
+    protected final void assertInvariants( Map<K, V> map )
+    {
         Set<K> keySet = map.keySet();
         Collection<V> valueCollection = map.values();
         Set<Entry<K, V>> entrySet = map.entrySet();
 
-        assertEquals(map.size() == 0, map.isEmpty());
-        assertEquals(map.size(), keySet.size());
-        assertEquals(keySet.size() == 0, keySet.isEmpty());
-        assertEquals(!keySet.isEmpty(), keySet.iterator().hasNext());
+        assertEquals( map.size() == 0, map.isEmpty() );
+        assertEquals( map.size(), keySet.size() );
+        assertEquals( keySet.size() == 0, keySet.isEmpty() );
+        assertEquals( !keySet.isEmpty(), keySet.iterator().hasNext() );
 
         int expectedKeySetHash = 0;
-        for (K key : keySet) {
-            V value = map.get(key);
+        for( K key : keySet )
+        {
+            V value = map.get( key );
             expectedKeySetHash += key != null ? key.hashCode() : 0;
-            assertTrue(map.containsKey(key));
-            assertTrue(map.containsValue(value));
-            assertTrue(valueCollection.contains(value));
-            assertTrue(valueCollection.containsAll(Collections.singleton(value)));
-            assertTrue(entrySet.contains(mapEntry(key, value)));
-            assertTrue(allowsNullKeys || (key != null));
+            assertTrue( map.containsKey( key ) );
+            assertTrue( map.containsValue( value ) );
+            assertTrue( valueCollection.contains( value ) );
+            assertTrue( valueCollection.containsAll( Collections.singleton( value ) ) );
+            assertTrue( entrySet.contains( mapEntry( key, value ) ) );
+            assertTrue( allowsNullKeys || ( key != null ) );
         }
-        assertEquals(expectedKeySetHash, keySet.hashCode());
+        assertEquals( expectedKeySetHash, keySet.hashCode() );
 
-        assertEquals(map.size(), valueCollection.size());
-        assertEquals(valueCollection.size() == 0, valueCollection.isEmpty());
+        assertEquals( map.size(), valueCollection.size() );
+        assertEquals( valueCollection.size() == 0, valueCollection.isEmpty() );
         assertEquals(
-                !valueCollection.isEmpty(), valueCollection.iterator().hasNext());
-        for (V value : valueCollection) {
-            assertTrue(map.containsValue(value));
-            assertTrue(allowsNullValues || (value != null));
+            !valueCollection.isEmpty(), valueCollection.iterator().hasNext() );
+        for( V value : valueCollection )
+        {
+            assertTrue( map.containsValue( value ) );
+            assertTrue( allowsNullValues || ( value != null ) );
         }
 
-        assertEquals(map.size(), entrySet.size());
-        assertEquals(entrySet.size() == 0, entrySet.isEmpty());
-        assertEquals(!entrySet.isEmpty(), entrySet.iterator().hasNext());
-        assertTrue(!entrySet.contains("foo"));
+        assertEquals( map.size(), entrySet.size() );
+        assertEquals( entrySet.size() == 0, entrySet.isEmpty() );
+        assertEquals( !entrySet.isEmpty(), entrySet.iterator().hasNext() );
+        assertTrue( !entrySet.contains( "foo" ) );
 
-        boolean supportsValuesHashCode = supportsValuesHashCode(map);
-        if (supportsValuesHashCode) {
+        boolean supportsValuesHashCode = supportsValuesHashCode( map );
+        if( supportsValuesHashCode )
+        {
             int expectedEntrySetHash = 0;
-            for (Entry<K, V> entry : entrySet) {
-                assertTrue(map.containsKey(entry.getKey()));
-                assertTrue(entry.toString(), map.containsValue(entry.getValue()));
+            for( Entry<K, V> entry : entrySet )
+            {
+                assertTrue( map.containsKey( entry.getKey() ) );
+                assertTrue( entry.toString(), map.containsValue( entry.getValue() ) );
                 int expectedHash =
-                        (entry.getKey() == null ? 0 : entry.getKey().hashCode()) ^
-                                (entry.getValue() == null ? 0 : entry.getValue().hashCode());
-                assertEquals(expectedHash, entry.hashCode());
+                    ( entry.getKey() == null ? 0 : entry.getKey().hashCode() ) ^
+                    ( entry.getValue() == null ? 0 : entry.getValue().hashCode() );
+                assertEquals( expectedHash, entry.hashCode() );
                 expectedEntrySetHash += expectedHash;
             }
-            assertEquals(expectedEntrySetHash, entrySet.hashCode());
-            assertTrue(entrySet.containsAll(new HashSet<Entry<K, V>>(entrySet)));
-            assertTrue(entrySet.equals(new HashSet<Entry<K, V>>(entrySet)));
+            assertEquals( expectedEntrySetHash, entrySet.hashCode() );
+            assertTrue( entrySet.containsAll( new HashSet<Entry<K, V>>( entrySet ) ) );
+            assertTrue( entrySet.equals( new HashSet<Entry<K, V>>( entrySet ) ) );
         }
 
         Object[] entrySetToArray1 = entrySet.toArray();
-        assertEquals(map.size(), entrySetToArray1.length);
-        assertTrue(Arrays.asList(entrySetToArray1).containsAll(entrySet));
+        assertEquals( map.size(), entrySetToArray1.length );
+        assertTrue( Arrays.asList( entrySetToArray1 ).containsAll( entrySet ) );
 
-        Entry<?, ?>[] entrySetToArray2 = new Entry<?, ?>[map.size() + 2];
-        entrySetToArray2[map.size()] = mapEntry("foo", 1);
-        assertSame(entrySetToArray2, entrySet.toArray(entrySetToArray2));
-        assertNull(entrySetToArray2[map.size()]);
-        assertTrue(Arrays.asList(entrySetToArray2).containsAll(entrySet));
+        Entry<?, ?>[] entrySetToArray2 = new Entry<?, ?>[ map.size() + 2 ];
+        entrySetToArray2[ map.size() ] = mapEntry( "foo", 1 );
+        assertSame( entrySetToArray2, entrySet.toArray( entrySetToArray2 ) );
+        assertNull( entrySetToArray2[ map.size() ] );
+        assertTrue( Arrays.asList( entrySetToArray2 ).containsAll( entrySet ) );
 
         Object[] valuesToArray1 = valueCollection.toArray();
-        assertEquals(map.size(), valuesToArray1.length);
-        assertTrue(Arrays.asList(valuesToArray1).containsAll(valueCollection));
+        assertEquals( map.size(), valuesToArray1.length );
+        assertTrue( Arrays.asList( valuesToArray1 ).containsAll( valueCollection ) );
 
-        Object[] valuesToArray2 = new Object[map.size() + 2];
-        valuesToArray2[map.size()] = "foo";
-        assertSame(valuesToArray2, valueCollection.toArray(valuesToArray2));
-        assertNull(valuesToArray2[map.size()]);
-        assertTrue(Arrays.asList(valuesToArray2).containsAll(valueCollection));
+        Object[] valuesToArray2 = new Object[ map.size() + 2 ];
+        valuesToArray2[ map.size() ] = "foo";
+        assertSame( valuesToArray2, valueCollection.toArray( valuesToArray2 ) );
+        assertNull( valuesToArray2[ map.size() ] );
+        assertTrue( Arrays.asList( valuesToArray2 ).containsAll( valueCollection ) );
 
-        if (supportsValuesHashCode) {
+        if( supportsValuesHashCode )
+        {
             int expectedHash = 0;
-            for (Entry<K, V> entry : entrySet) {
+            for( Entry<K, V> entry : entrySet )
+            {
                 expectedHash += entry.hashCode();
             }
-            assertEquals(expectedHash, map.hashCode());
+            assertEquals( expectedHash, map.hashCode() );
         }
 
-        assertMoreInvariants(map);
+        assertMoreInvariants( map );
     }
 
     /**
@@ -237,1384 +267,1916 @@ public abstract class MapInterfaceTest<K, V> extends TestCase {
      *
      * @param map the map whose additional invariants to check.
      */
-    protected void assertMoreInvariants(Map<K, V> map) {
+    protected void assertMoreInvariants( Map<K, V> map )
+    {
     }
 
-    public void testClear() {
+    public void testClear()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
-        if (supportsClear) {
+        if( supportsClear )
+        {
             map.clear();
-            assertEquals(0, map.size());
-            assertTrue(map.isEmpty());
-        } else {
-            try {
+            assertEquals( 0, map.size() );
+            assertTrue( map.isEmpty() );
+        }
+        else
+        {
+            try
+            {
                 map.clear();
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testContainsKey() {
+    public void testContainsKey()
+    {
         final Map<K, V> map;
         final K unmappedKey;
-        try {
+        try
+        {
             map = makePopulatedMap();
             unmappedKey = getKeyNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertTrue(!map.containsKey(unmappedKey));
-        assertTrue(map.containsKey(map.keySet().iterator().next()));
-        if (allowsNullKeys) {
-            map.containsKey(null);
-        } else {
-            try {
-                map.containsKey(null);
-            } catch (NullPointerException optional) {
+        assertTrue( !map.containsKey( unmappedKey ) );
+        assertTrue( map.containsKey( map.keySet().iterator().next() ) );
+        if( allowsNullKeys )
+        {
+            map.containsKey( null );
+        }
+        else
+        {
+            try
+            {
+                map.containsKey( null );
+            }
+            catch( NullPointerException optional )
+            {
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testContainsValue() {
+    public void testContainsValue()
+    {
         final Map<K, V> map;
         final V unmappedValue;
-        try {
+        try
+        {
             map = makePopulatedMap();
             unmappedValue = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertTrue(!map.containsValue(unmappedValue));
-        assertTrue(map.containsValue(map.values().iterator().next()));
-        if (allowsNullValues) {
-            map.containsValue(null);
-        } else {
-            try {
-                map.containsKey(null);
-            } catch (NullPointerException optional) {
+        assertTrue( !map.containsValue( unmappedValue ) );
+        assertTrue( map.containsValue( map.values().iterator().next() ) );
+        if( allowsNullValues )
+        {
+            map.containsValue( null );
+        }
+        else
+        {
+            try
+            {
+                map.containsKey( null );
+            }
+            catch( NullPointerException optional )
+            {
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testEntrySet() {
+    public void testEntrySet()
+    {
         final Map<K, V> map;
         final Set<Entry<K, V>> entrySet;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertInvariants(map);
+        assertInvariants( map );
 
         entrySet = map.entrySet();
         final K unmappedKey;
         final V unmappedValue;
-        try {
+        try
+        {
             unmappedKey = getKeyNotInPopulatedMap();
             unmappedValue = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        for (Entry<K, V> entry : entrySet) {
-            assertTrue(!unmappedKey.equals(entry.getKey()));
-            assertTrue(!unmappedValue.equals(entry.getValue()));
+        for( Entry<K, V> entry : entrySet )
+        {
+            assertTrue( !unmappedKey.equals( entry.getKey() ) );
+            assertTrue( !unmappedValue.equals( entry.getValue() ) );
         }
     }
 
-    public void testEntrySetForEmptyMap() {
+    public void testEntrySetForEmptyMap()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testEntrySetContainsEntryNullKeyPresent() {
-        if (!allowsNullKeys || !supportsPut) {
+    public void testEntrySetContainsEntryNullKeyPresent()
+    {
+        if( !allowsNullKeys || !supportsPut )
+        {
             return;
         }
         final Map<K, V> map;
         final Set<Entry<K, V>> entrySet;
-        try {
+        try
+        {
             map = makeEitherMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertInvariants(map);
+        assertInvariants( map );
 
         entrySet = map.entrySet();
         final V unmappedValue;
-        try {
+        try
+        {
             unmappedValue = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
-        map.put(null, unmappedValue);
-        Entry<K, V> entry = mapEntry(null, unmappedValue);
-        assertTrue(entrySet.contains(entry));
-        assertTrue(!entrySet.contains(mapEntry(null, null)));
+        map.put( null, unmappedValue );
+        Entry<K, V> entry = mapEntry( null, unmappedValue );
+        assertTrue( entrySet.contains( entry ) );
+        assertTrue( !entrySet.contains( mapEntry( null, null ) ) );
     }
 
-    public void testEntrySetContainsEntryNullKeyMissing() {
+    public void testEntrySetContainsEntryNullKeyMissing()
+    {
         final Map<K, V> map;
         final Set<Entry<K, V>> entrySet;
-        try {
+        try
+        {
             map = makeEitherMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertInvariants(map);
+        assertInvariants( map );
 
         entrySet = map.entrySet();
         final V unmappedValue;
-        try {
+        try
+        {
             unmappedValue = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        Entry<K, V> entry = mapEntry(null, unmappedValue);
-        assertTrue(!entrySet.contains(entry));
-        assertTrue(!entrySet.contains(mapEntry(null, null)));
+        Entry<K, V> entry = mapEntry( null, unmappedValue );
+        assertTrue( !entrySet.contains( entry ) );
+        assertTrue( !entrySet.contains( mapEntry( null, null ) ) );
     }
 
-    public void testEntrySetIteratorRemove() {
+    public void testEntrySetIteratorRemove()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
         Iterator<Entry<K, V>> iterator = entrySet.iterator();
-        if (supportsIteratorRemove) {
+        if( supportsIteratorRemove )
+        {
             int initialSize = map.size();
             Entry<K, V> entry = iterator.next();
             iterator.remove();
-            assertEquals(initialSize - 1, map.size());
-            assertTrue(!entrySet.contains(entry));
-            assertInvariants(map);
-            try {
+            assertEquals( initialSize - 1, map.size() );
+            assertTrue( !entrySet.contains( entry ) );
+            assertInvariants( map );
+            try
+            {
                 iterator.remove();
-                fail("Expected IllegalStateException.");
-            } catch (IllegalStateException e) {
-                // Expected.
+                fail( "Expected IllegalStateException." );
             }
-        } else {
-            try {
-                iterator.next();
-                iterator.remove();
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+            catch( IllegalStateException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        else
+        {
+            try
+            {
+                iterator.next();
+                iterator.remove();
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
+                // Expected.
+            }
+        }
+        assertInvariants( map );
     }
 
-    public void testEntrySetRemove() {
+    public void testEntrySetRemove()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
-        if (supportsRemove) {
+        if( supportsRemove )
+        {
             int initialSize = map.size();
-            boolean didRemove = entrySet.remove(entrySet.iterator().next());
-            assertTrue(didRemove);
-            assertEquals(initialSize - 1, map.size());
-        } else {
-            try {
-                entrySet.remove(entrySet.iterator().next());
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+            boolean didRemove = entrySet.remove( entrySet.iterator().next() );
+            assertTrue( didRemove );
+            assertEquals( initialSize - 1, map.size() );
+        }
+        else
+        {
+            try
+            {
+                entrySet.remove( entrySet.iterator().next() );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testEntrySetRemoveMissingKey() {
+    public void testEntrySetRemoveMissingKey()
+    {
         final Map<K, V> map;
         final K key;
-        try {
+        try
+        {
             map = makeEitherMap();
             key = getKeyNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
         Entry<K, V> entry
-                = mapEntry(key, getValueNotInPopulatedMap());
+            = mapEntry( key, getValueNotInPopulatedMap() );
         int initialSize = map.size();
-        if (supportsRemove) {
-            boolean didRemove = entrySet.remove(entry);
-            assertTrue(!didRemove);
-        } else {
-            try {
-                boolean didRemove = entrySet.remove(entry);
-                assertTrue(!didRemove);
-            } catch (UnsupportedOperationException optional) {
+        if( supportsRemove )
+        {
+            boolean didRemove = entrySet.remove( entry );
+            assertTrue( !didRemove );
+        }
+        else
+        {
+            try
+            {
+                boolean didRemove = entrySet.remove( entry );
+                assertTrue( !didRemove );
+            }
+            catch( UnsupportedOperationException optional )
+            {
             }
         }
-        assertEquals(initialSize, map.size());
-        assertTrue(!map.containsKey(key));
-        assertInvariants(map);
+        assertEquals( initialSize, map.size() );
+        assertTrue( !map.containsKey( key ) );
+        assertInvariants( map );
     }
 
-    public void testEntrySetRemoveDifferentValue() {
+    public void testEntrySetRemoveDifferentValue()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
         K key = map.keySet().iterator().next();
         Entry<K, V> entry
-                = mapEntry(key, getValueNotInPopulatedMap());
+            = mapEntry( key, getValueNotInPopulatedMap() );
         int initialSize = map.size();
-        if (supportsRemove) {
-            boolean didRemove = entrySet.remove(entry);
-            assertTrue(!didRemove);
-        } else {
-            try {
-                boolean didRemove = entrySet.remove(entry);
-                assertTrue(!didRemove);
-            } catch (UnsupportedOperationException optional) {
+        if( supportsRemove )
+        {
+            boolean didRemove = entrySet.remove( entry );
+            assertTrue( !didRemove );
+        }
+        else
+        {
+            try
+            {
+                boolean didRemove = entrySet.remove( entry );
+                assertTrue( !didRemove );
+            }
+            catch( UnsupportedOperationException optional )
+            {
             }
         }
-        assertEquals(initialSize, map.size());
-        assertTrue(map.containsKey(key));
-        assertInvariants(map);
+        assertEquals( initialSize, map.size() );
+        assertTrue( map.containsKey( key ) );
+        assertInvariants( map );
     }
 
-    public void testEntrySetRemoveNullKeyPresent() {
-        if (!allowsNullKeys || !supportsPut || !supportsRemove) {
+    public void testEntrySetRemoveNullKeyPresent()
+    {
+        if( !allowsNullKeys || !supportsPut || !supportsRemove )
+        {
             return;
         }
         final Map<K, V> map;
         final Set<Entry<K, V>> entrySet;
-        try {
+        try
+        {
             map = makeEitherMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertInvariants(map);
+        assertInvariants( map );
 
         entrySet = map.entrySet();
         final V unmappedValue;
-        try {
+        try
+        {
             unmappedValue = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
-        map.put(null, unmappedValue);
-        assertEquals(unmappedValue, map.get(null));
-        assertTrue(map.containsKey(null));
-        Entry<K, V> entry = mapEntry(null, unmappedValue);
-        assertTrue(entrySet.remove(entry));
-        assertNull(map.get(null));
-        assertTrue(!map.containsKey(null));
+        map.put( null, unmappedValue );
+        assertEquals( unmappedValue, map.get( null ) );
+        assertTrue( map.containsKey( null ) );
+        Entry<K, V> entry = mapEntry( null, unmappedValue );
+        assertTrue( entrySet.remove( entry ) );
+        assertNull( map.get( null ) );
+        assertTrue( !map.containsKey( null ) );
     }
 
-    public void testEntrySetRemoveNullKeyMissing() {
+    public void testEntrySetRemoveNullKeyMissing()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEitherMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
         Entry<K, V> entry
-                = mapEntry(null, getValueNotInPopulatedMap());
+            = mapEntry( null, getValueNotInPopulatedMap() );
         int initialSize = map.size();
-        if (supportsRemove) {
-            boolean didRemove = entrySet.remove(entry);
-            assertTrue(!didRemove);
-        } else {
-            try {
-                boolean didRemove = entrySet.remove(entry);
-                assertTrue(!didRemove);
-            } catch (UnsupportedOperationException optional) {
+        if( supportsRemove )
+        {
+            boolean didRemove = entrySet.remove( entry );
+            assertTrue( !didRemove );
+        }
+        else
+        {
+            try
+            {
+                boolean didRemove = entrySet.remove( entry );
+                assertTrue( !didRemove );
+            }
+            catch( UnsupportedOperationException optional )
+            {
             }
         }
-        assertEquals(initialSize, map.size());
-        assertInvariants(map);
+        assertEquals( initialSize, map.size() );
+        assertInvariants( map );
     }
 
-    public void testEntrySetRemoveAll() {
+    public void testEntrySetRemoveAll()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
         Set<Entry<K, V>> entriesToRemove =
-                singleton(entrySet.iterator().next());
-        if (supportsRemove) {
+            singleton( entrySet.iterator().next() );
+        if( supportsRemove )
+        {
             int initialSize = map.size();
-            boolean didRemove = entrySet.removeAll(entriesToRemove);
-            assertTrue(didRemove);
-            assertEquals(initialSize - entriesToRemove.size(), map.size());
-            for (Entry<K, V> entry : entriesToRemove) {
-                assertTrue(!entrySet.contains(entry));
+            boolean didRemove = entrySet.removeAll( entriesToRemove );
+            assertTrue( didRemove );
+            assertEquals( initialSize - entriesToRemove.size(), map.size() );
+            for( Entry<K, V> entry : entriesToRemove )
+            {
+                assertTrue( !entrySet.contains( entry ) );
             }
-        } else {
-            try {
-                entrySet.removeAll(entriesToRemove);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+        }
+        else
+        {
+            try
+            {
+                entrySet.removeAll( entriesToRemove );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testEntrySetRemoveAllNullFromEmpty() {
+    public void testEntrySetRemoveAllNullFromEmpty()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
-        if (supportsRemove) {
-            try {
-                entrySet.removeAll(null);
-                fail("Expected NullPointerException.");
-            } catch (NullPointerException e) {
-                // Expected.
+        if( supportsRemove )
+        {
+            try
+            {
+                entrySet.removeAll( null );
+                fail( "Expected NullPointerException." );
             }
-        } else {
-            try {
-                entrySet.removeAll(null);
-                fail("Expected UnsupportedOperationException or NullPointerException.");
-            } catch (UnsupportedOperationException e) {
-                // Expected.
-            } catch (NullPointerException e) {
+            catch( NullPointerException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        else
+        {
+            try
+            {
+                entrySet.removeAll( null );
+                fail( "Expected UnsupportedOperationException or NullPointerException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
+                // Expected.
+            }
+            catch( NullPointerException e )
+            {
+                // Expected.
+            }
+        }
+        assertInvariants( map );
     }
 
-    public void testEntrySetRetainAll() {
+    public void testEntrySetRetainAll()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
         Set<Entry<K, V>> entriesToRetain =
-                singleton(entrySet.iterator().next());
-        if (supportsRemove) {
-            boolean shouldRemove = (entrySet.size() > entriesToRetain.size());
-            boolean didRemove = entrySet.retainAll(entriesToRetain);
-            assertEquals(shouldRemove, didRemove);
-            assertEquals(entriesToRetain.size(), map.size());
-            for (Entry<K, V> entry : entriesToRetain) {
-                assertTrue(entrySet.contains(entry));
+            singleton( entrySet.iterator().next() );
+        if( supportsRemove )
+        {
+            boolean shouldRemove = ( entrySet.size() > entriesToRetain.size() );
+            boolean didRemove = entrySet.retainAll( entriesToRetain );
+            assertEquals( shouldRemove, didRemove );
+            assertEquals( entriesToRetain.size(), map.size() );
+            for( Entry<K, V> entry : entriesToRetain )
+            {
+                assertTrue( entrySet.contains( entry ) );
             }
-        } else {
-            try {
-                entrySet.retainAll(entriesToRetain);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+        }
+        else
+        {
+            try
+            {
+                entrySet.retainAll( entriesToRetain );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testEntrySetRetainAllNullFromEmpty() {
+    public void testEntrySetRetainAllNullFromEmpty()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
-        if (supportsRemove) {
-            try {
-                entrySet.retainAll(null);
+        if( supportsRemove )
+        {
+            try
+            {
+                entrySet.retainAll( null );
                 // Returning successfully is not ideal, but tolerated.
-            } catch (NullPointerException e) {
-                // Expected.
             }
-        } else {
-            try {
-                entrySet.retainAll(null);
-                // We have to tolerate a successful return (Sun bug 4802647)
-            } catch (UnsupportedOperationException e) {
-                // Expected.
-            } catch (NullPointerException e) {
+            catch( NullPointerException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        else
+        {
+            try
+            {
+                entrySet.retainAll( null );
+                // We have to tolerate a successful return (Sun bug 4802647)
+            }
+            catch( UnsupportedOperationException e )
+            {
+                // Expected.
+            }
+            catch( NullPointerException e )
+            {
+                // Expected.
+            }
+        }
+        assertInvariants( map );
     }
 
-    public void testEntrySetClear() {
+    public void testEntrySetClear()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
-        if (supportsClear) {
+        if( supportsClear )
+        {
             entrySet.clear();
-            assertTrue(entrySet.isEmpty());
-        } else {
-            try {
+            assertTrue( entrySet.isEmpty() );
+        }
+        else
+        {
+            try
+            {
                 entrySet.clear();
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testEntrySetAddAndAddAll() {
+    public void testEntrySetAddAndAddAll()
+    {
         final Map<K, V> map = makeEitherMap();
 
         Set<Entry<K, V>> entrySet = map.entrySet();
-        final Entry<K, V> entryToAdd = mapEntry(null, null);
-        try {
-            entrySet.add(entryToAdd);
-            fail("Expected UnsupportedOperationException or NullPointerException.");
-        } catch (UnsupportedOperationException e) {
-            // Expected.
-        } catch (NullPointerException e) {
+        final Entry<K, V> entryToAdd = mapEntry( null, null );
+        try
+        {
+            entrySet.add( entryToAdd );
+            fail( "Expected UnsupportedOperationException or NullPointerException." );
+        }
+        catch( UnsupportedOperationException e )
+        {
             // Expected.
         }
-        assertInvariants(map);
+        catch( NullPointerException e )
+        {
+            // Expected.
+        }
+        assertInvariants( map );
 
-        try {
-            entrySet.addAll(singleton(entryToAdd));
-            fail("Expected UnsupportedOperationException or NullPointerException.");
-        } catch (UnsupportedOperationException e) {
-            // Expected.
-        } catch (NullPointerException e) {
+        try
+        {
+            entrySet.addAll( singleton( entryToAdd ) );
+            fail( "Expected UnsupportedOperationException or NullPointerException." );
+        }
+        catch( UnsupportedOperationException e )
+        {
             // Expected.
         }
-        assertInvariants(map);
+        catch( NullPointerException e )
+        {
+            // Expected.
+        }
+        assertInvariants( map );
     }
 
-    public void testEntrySetSetValue() {
+    public void testEntrySetSetValue()
+    {
         // TODO: Investigate the extent to which, in practice, maps that support
         // put() also support Entry.setValue().
-        if (!supportsPut || !supportsEntrySetValue) {
+        if( !supportsPut || !supportsEntrySetValue )
+        {
             return;
         }
 
         final Map<K, V> map;
         final V valueToSet;
-        try {
+        try
+        {
             map = makePopulatedMap();
             valueToSet = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
         Entry<K, V> entry = entrySet.iterator().next();
         final V oldValue = entry.getValue();
-        final V returnedValue = entry.setValue(valueToSet);
-        assertEquals(oldValue, returnedValue);
-        assertTrue(entrySet.contains(
-                mapEntry(entry.getKey(), valueToSet)));
-        assertEquals(valueToSet, map.get(entry.getKey()));
-        assertInvariants(map);
+        final V returnedValue = entry.setValue( valueToSet );
+        assertEquals( oldValue, returnedValue );
+        assertTrue( entrySet.contains(
+            mapEntry( entry.getKey(), valueToSet ) ) );
+        assertEquals( valueToSet, map.get( entry.getKey() ) );
+        assertInvariants( map );
     }
 
-    public void testEntrySetSetValueSameValue() {
+    public void testEntrySetSetValueSameValue()
+    {
 
         // TODO: Investigate the extent to which, in practice, maps that support
         // put() also support Entry.setValue().
-        if (!supportsPut || !supportsEntrySetValue) {
+        if( !supportsPut || !supportsEntrySetValue )
+        {
             return;
         }
 
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<Entry<K, V>> entrySet = map.entrySet();
         Entry<K, V> entry = entrySet.iterator().next();
         final V oldValue = entry.getValue();
-        final V returnedValue = entry.setValue(oldValue);
-        assertEquals(oldValue, returnedValue);
-        assertTrue(entrySet.contains(
-                mapEntry(entry.getKey(), oldValue)));
-        assertEquals(oldValue, map.get(entry.getKey()));
-        assertInvariants(map);
-    }
-    
-    public void testEntrySetIteratorLastHasNext() {
-    	final Map<K, V> map;
-        try {
-            map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
-            return;
-        }
-        Iterator<Entry<K, V>> iter = map.entrySet().iterator();
-        for(int i = 0; i < map.size(); i++)
-        	iter.next();
-        assertFalse(iter.hasNext());
+        final V returnedValue = entry.setValue( oldValue );
+        assertEquals( oldValue, returnedValue );
+        assertTrue( entrySet.contains(
+            mapEntry( entry.getKey(), oldValue ) ) );
+        assertEquals( oldValue, map.get( entry.getKey() ) );
+        assertInvariants( map );
     }
 
-    public void testEntrySetIteratorLastNext() {
-    	final Map<K, V> map;
-        try {
-            map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
-            return;
-        }
-        Iterator<Entry<K, V>> iter = map.entrySet().iterator();
-        for(int i = 0; i < map.size(); i++)
-        	iter.next();
-        try {
-        	iter.next();
-        }
-        catch(NoSuchElementException e) {
-        	// Expected
-        }
-    }
-
-    public void testEqualsForEqualMap() {
+    public void testEntrySetIteratorLastHasNext()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
+            return;
+        }
+        Iterator<Entry<K, V>> iter = map.entrySet().iterator();
+        for( int i = 0; i < map.size(); i++ )
+        {
+            iter.next();
+        }
+        assertFalse( iter.hasNext() );
+    }
+
+    public void testEntrySetIteratorLastNext()
+    {
+        final Map<K, V> map;
+        try
+        {
+            map = makePopulatedMap();
+        }
+        catch( UnsupportedOperationException e )
+        {
+            return;
+        }
+        Iterator<Entry<K, V>> iter = map.entrySet().iterator();
+        for( int i = 0; i < map.size(); i++ )
+        {
+            iter.next();
+        }
+        try
+        {
+            iter.next();
+        }
+        catch( NoSuchElementException e )
+        {
+            // Expected
+        }
+    }
+
+    public void testEqualsForEqualMap()
+    {
+        final Map<K, V> map;
+        try
+        {
+            map = makePopulatedMap();
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
-        assertEquals(map, map);
-        assertEquals(makePopulatedMap(), map);
-        assertTrue(!map.equals(Collections.emptyMap()));
+        assertEquals( map, map );
+        assertEquals( makePopulatedMap(), map );
+        assertTrue( !map.equals( Collections.emptyMap() ) );
         //no-inspection ObjectEqualsNull
-        assertTrue(!map.equals(null));
+        assertTrue( !map.equals( null ) );
     }
 
-    public void testEqualsForLargerMap() {
-        if (!supportsPut) {
+    public void testEqualsForLargerMap()
+    {
+        if( !supportsPut )
+        {
             return;
         }
 
         final Map<K, V> map;
         final Map<K, V> largerMap;
-        try {
+        try
+        {
             map = makePopulatedMap();
             largerMap = makePopulatedMap();
-            largerMap.put(getKeyNotInPopulatedMap(), getValueNotInPopulatedMap());
-        } catch (UnsupportedOperationException e) {
+            largerMap.put( getKeyNotInPopulatedMap(), getValueNotInPopulatedMap() );
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
-        assertTrue(!map.equals(largerMap));
+        assertTrue( !map.equals( largerMap ) );
     }
 
-    public void testEqualsForSmallerMap() {
-        if (!supportsRemove) {
+    public void testEqualsForSmallerMap()
+    {
+        if( !supportsRemove )
+        {
             return;
         }
 
         final Map<K, V> map;
         final Map<K, V> smallerMap;
-        try {
+        try
+        {
             map = makePopulatedMap();
-            smallerMap = new LinkedHashMap<K, V>(map);
+            smallerMap = new LinkedHashMap<K, V>( map );
 //      smallerMap = makePopulatedMap();
-            smallerMap.remove(smallerMap.keySet().iterator().next());
-        } catch (UnsupportedOperationException e) {
+            smallerMap.remove( smallerMap.keySet().iterator().next() );
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
-        assertTrue(!map.equals(smallerMap));
+        assertTrue( !map.equals( smallerMap ) );
     }
 
-    public void testEqualsForEmptyMap() {
+    public void testEqualsForEmptyMap()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
-        assertEquals(map, map);
-        assertEquals(makeEmptyMap(), map);
-        assertEquals(Collections.emptyMap(), map);
-        assertTrue(!map.equals(Collections.emptySet()));
+        assertEquals( map, map );
+        assertEquals( makeEmptyMap(), map );
+        assertEquals( Collections.emptyMap(), map );
+        assertTrue( !map.equals( Collections.emptySet() ) );
         //noinspection ObjectEqualsNull
-        assertTrue(!map.equals(null));
+        assertTrue( !map.equals( null ) );
     }
 
-    public void testGet() {
+    public void testGet()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
-        for (Entry<K, V> entry : map.entrySet()) {
-            assertEquals(entry.getValue(), map.get(entry.getKey()));
+        for( Entry<K, V> entry : map.entrySet() )
+        {
+            assertEquals( entry.getValue(), map.get( entry.getKey() ) );
         }
 
         K unmappedKey;
-        try {
+        try
+        {
             unmappedKey = getKeyNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertNull(map.get(unmappedKey));
+        assertNull( map.get( unmappedKey ) );
     }
 
-    public void testGetForEmptyMap() {
+    public void testGetForEmptyMap()
+    {
         final Map<K, V> map;
         K unmappedKey;
-        try {
+        try
+        {
             map = makeEmptyMap();
             unmappedKey = getKeyNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertNull(map.get(unmappedKey));
+        assertNull( map.get( unmappedKey ) );
     }
 
-    public void testGetNull() {
+    public void testGetNull()
+    {
         Map<K, V> map = makeEitherMap();
-        if (allowsNullKeys) {
-            if (allowsNullValues) {
+        if( allowsNullKeys )
+        {
+            if( allowsNullValues )
+            {
                 // TODO: decide what to test here.
-            } else {
-                assertEquals(map.containsKey(null), map.get(null) != null);
             }
-        } else {
-            try {
-                map.get(null);
-            } catch (NullPointerException optional) {
+            else
+            {
+                assertEquals( map.containsKey( null ), map.get( null ) != null );
             }
         }
-        assertInvariants(map);
+        else
+        {
+            try
+            {
+                map.get( null );
+            }
+            catch( NullPointerException optional )
+            {
+            }
+        }
+        assertInvariants( map );
     }
 
-    public void testHashCode() {
+    public void testHashCode()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testHashCodeForEmptyMap() {
+    public void testHashCodeForEmptyMap()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testPutNewKey() {
+    public void testPutNewKey()
+    {
         final Map<K, V> map = makeEitherMap();
         final K keyToPut;
         final V valueToPut;
-        try {
+        try
+        {
             keyToPut = getKeyNotInPopulatedMap();
             valueToPut = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        if (supportsPut) {
+        if( supportsPut )
+        {
             int initialSize = map.size();
-            V oldValue = map.put(keyToPut, valueToPut);
-            assertEquals(valueToPut, map.get(keyToPut));
-            assertTrue(map.containsKey(keyToPut));
-            assertTrue(map.containsValue(valueToPut));
-            assertEquals(initialSize + 1, map.size());
-            assertNull(oldValue);
-        } else {
-            try {
-                map.put(keyToPut, valueToPut);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+            V oldValue = map.put( keyToPut, valueToPut );
+            assertEquals( valueToPut, map.get( keyToPut ) );
+            assertTrue( map.containsKey( keyToPut ) );
+            assertTrue( map.containsValue( valueToPut ) );
+            assertEquals( initialSize + 1, map.size() );
+            assertNull( oldValue );
+        }
+        else
+        {
+            try
+            {
+                map.put( keyToPut, valueToPut );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testPutExistingKey() {
+    public void testPutExistingKey()
+    {
         final Map<K, V> map;
         final K keyToPut;
         final V valueToPut;
-        try {
+        try
+        {
             map = makePopulatedMap();
             valueToPut = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
         keyToPut = map.keySet().iterator().next();
-        if (supportsPut) {
+        if( supportsPut )
+        {
             int initialSize = map.size();
-            map.put(keyToPut, valueToPut);
-            assertEquals(valueToPut, map.get(keyToPut));
-            assertTrue(map.containsKey(keyToPut));
-            assertTrue(map.containsValue(valueToPut));
-            assertEquals(initialSize, map.size());
-        } else {
-            try {
-                map.put(keyToPut, valueToPut);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+            map.put( keyToPut, valueToPut );
+            assertEquals( valueToPut, map.get( keyToPut ) );
+            assertTrue( map.containsKey( keyToPut ) );
+            assertTrue( map.containsValue( valueToPut ) );
+            assertEquals( initialSize, map.size() );
+        }
+        else
+        {
+            try
+            {
+                map.put( keyToPut, valueToPut );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testPutNullKey() {
-        if (!supportsPut) {
+    public void testPutNullKey()
+    {
+        if( !supportsPut )
+        {
             return;
         }
         final Map<K, V> map = makeEitherMap();
         final V valueToPut;
-        try {
+        try
+        {
             valueToPut = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        if (allowsNullKeys) {
-            final V oldValue = map.get(null);
-            final V returnedValue = map.put(null, valueToPut);
-            assertEquals(oldValue, returnedValue);
-            assertEquals(valueToPut, map.get(null));
-            assertTrue(map.containsKey(null));
-            assertTrue(map.containsValue(valueToPut));
-        } else {
-            try {
-                map.put(null, valueToPut);
-                fail("Expected RuntimeException");
-            } catch (RuntimeException e) {
+        if( allowsNullKeys )
+        {
+            final V oldValue = map.get( null );
+            final V returnedValue = map.put( null, valueToPut );
+            assertEquals( oldValue, returnedValue );
+            assertEquals( valueToPut, map.get( null ) );
+            assertTrue( map.containsKey( null ) );
+            assertTrue( map.containsValue( valueToPut ) );
+        }
+        else
+        {
+            try
+            {
+                map.put( null, valueToPut );
+                fail( "Expected RuntimeException" );
+            }
+            catch( RuntimeException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testPutNullValue() {
-        if (!supportsPut) {
+    public void testPutNullValue()
+    {
+        if( !supportsPut )
+        {
             return;
         }
         final Map<K, V> map = makeEitherMap();
         final K keyToPut;
-        try {
+        try
+        {
             keyToPut = getKeyNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        if (allowsNullValues) {
+        if( allowsNullValues )
+        {
             int initialSize = map.size();
-            final V oldValue = map.get(keyToPut);
-            final V returnedValue = map.put(keyToPut, null);
-            assertEquals(oldValue, returnedValue);
-            assertNull(map.get(keyToPut));
-            assertTrue(map.containsKey(keyToPut));
-            assertTrue(map.containsValue(null));
-            assertEquals(initialSize + 1, map.size());
-        } else {
-            try {
-                map.put(keyToPut, null);
-                fail("Expected RuntimeException");
-            } catch (RuntimeException e) {
+            final V oldValue = map.get( keyToPut );
+            final V returnedValue = map.put( keyToPut, null );
+            assertEquals( oldValue, returnedValue );
+            assertNull( map.get( keyToPut ) );
+            assertTrue( map.containsKey( keyToPut ) );
+            assertTrue( map.containsValue( null ) );
+            assertEquals( initialSize + 1, map.size() );
+        }
+        else
+        {
+            try
+            {
+                map.put( keyToPut, null );
+                fail( "Expected RuntimeException" );
+            }
+            catch( RuntimeException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testPutNullValueForExistingKey() {
-        if (!supportsPut) {
+    public void testPutNullValueForExistingKey()
+    {
+        if( !supportsPut )
+        {
             return;
         }
         final Map<K, V> map;
         final K keyToPut;
-        try {
+        try
+        {
             map = makePopulatedMap();
             keyToPut = map.keySet().iterator().next();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        if (allowsNullValues) {
+        if( allowsNullValues )
+        {
             int initialSize = map.size();
-            final V oldValue = map.get(keyToPut);
-            final V returnedValue = map.put(keyToPut, null);
-            assertEquals(oldValue, returnedValue);
-            assertNull(map.get(keyToPut));
-            assertTrue(map.containsKey(keyToPut));
-            assertTrue(map.containsValue(null));
-            assertEquals(initialSize, map.size());
-        } else {
-            try {
-                map.put(keyToPut, null);
-                fail("Expected RuntimeException");
-            } catch (RuntimeException e) {
+            final V oldValue = map.get( keyToPut );
+            final V returnedValue = map.put( keyToPut, null );
+            assertEquals( oldValue, returnedValue );
+            assertNull( map.get( keyToPut ) );
+            assertTrue( map.containsKey( keyToPut ) );
+            assertTrue( map.containsValue( null ) );
+            assertEquals( initialSize, map.size() );
+        }
+        else
+        {
+            try
+            {
+                map.put( keyToPut, null );
+                fail( "Expected RuntimeException" );
+            }
+            catch( RuntimeException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testPutAllNewKey() {
+    public void testPutAllNewKey()
+    {
         final Map<K, V> map = makeEitherMap();
         final K keyToPut;
         final V valueToPut;
-        try {
+        try
+        {
             keyToPut = getKeyNotInPopulatedMap();
             valueToPut = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        final Map<K, V> mapToPut = Collections.singletonMap(keyToPut, valueToPut);
-        if (supportsPut) {
+        final Map<K, V> mapToPut = Collections.singletonMap( keyToPut, valueToPut );
+        if( supportsPut )
+        {
             int initialSize = map.size();
-            map.putAll(mapToPut);
-            assertEquals(valueToPut, map.get(keyToPut));
-            assertTrue(map.containsKey(keyToPut));
-            assertTrue(map.containsValue(valueToPut));
-            assertEquals(initialSize + 1, map.size());
-        } else {
-            try {
-                map.putAll(mapToPut);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+            map.putAll( mapToPut );
+            assertEquals( valueToPut, map.get( keyToPut ) );
+            assertTrue( map.containsKey( keyToPut ) );
+            assertTrue( map.containsValue( valueToPut ) );
+            assertEquals( initialSize + 1, map.size() );
+        }
+        else
+        {
+            try
+            {
+                map.putAll( mapToPut );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testPutAllExistingKey() {
+    public void testPutAllExistingKey()
+    {
         final Map<K, V> map;
         final K keyToPut;
         final V valueToPut;
-        try {
+        try
+        {
             map = makePopulatedMap();
             valueToPut = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
         keyToPut = map.keySet().iterator().next();
-        final Map<K, V> mapToPut = Collections.singletonMap(keyToPut, valueToPut);
+        final Map<K, V> mapToPut = Collections.singletonMap( keyToPut, valueToPut );
         int initialSize = map.size();
-        if (supportsPut) {
-            map.putAll(mapToPut);
-            assertEquals(valueToPut, map.get(keyToPut));
-            assertTrue(map.containsKey(keyToPut));
-            assertTrue(map.containsValue(valueToPut));
-        } else {
-            try {
-                map.putAll(mapToPut);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+        if( supportsPut )
+        {
+            map.putAll( mapToPut );
+            assertEquals( valueToPut, map.get( keyToPut ) );
+            assertTrue( map.containsKey( keyToPut ) );
+            assertTrue( map.containsValue( valueToPut ) );
+        }
+        else
+        {
+            try
+            {
+                map.putAll( mapToPut );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertEquals(initialSize, map.size());
-        assertInvariants(map);
+        assertEquals( initialSize, map.size() );
+        assertInvariants( map );
     }
 
-    public void testRemove() {
+    public void testRemove()
+    {
         final Map<K, V> map;
         final K keyToRemove;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
         keyToRemove = map.keySet().iterator().next();
-        if (supportsRemove) {
+        if( supportsRemove )
+        {
             int initialSize = map.size();
-            V expectedValue = map.get(keyToRemove);
-            V oldValue = map.remove(keyToRemove);
-            assertEquals(expectedValue, oldValue);
-            assertTrue(!map.containsKey(keyToRemove));
-            assertEquals(initialSize - 1, map.size());
-        } else {
-            try {
-                map.remove(keyToRemove);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+            V expectedValue = map.get( keyToRemove );
+            V oldValue = map.remove( keyToRemove );
+            assertEquals( expectedValue, oldValue );
+            assertTrue( !map.containsKey( keyToRemove ) );
+            assertEquals( initialSize - 1, map.size() );
+        }
+        else
+        {
+            try
+            {
+                map.remove( keyToRemove );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testRemoveMissingKey() {
+    public void testRemoveMissingKey()
+    {
         final Map<K, V> map;
         final K keyToRemove;
-        try {
+        try
+        {
             map = makePopulatedMap();
             keyToRemove = getKeyNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        if (supportsRemove) {
+        if( supportsRemove )
+        {
             int initialSize = map.size();
-            assertNull(map.remove(keyToRemove));
-            assertEquals(initialSize, map.size());
-        } else {
-            try {
-                map.remove(keyToRemove);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+            assertNull( map.remove( keyToRemove ) );
+            assertEquals( initialSize, map.size() );
+        }
+        else
+        {
+            try
+            {
+                map.remove( keyToRemove );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testSize() {
-        assertInvariants(makeEitherMap());
+    public void testSize()
+    {
+        assertInvariants( makeEitherMap() );
     }
 
-    public void testKeySetClear() {
+    public void testKeySetClear()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEitherMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<K> keySet = map.keySet();
-        if (supportsClear) {
+        if( supportsClear )
+        {
             keySet.clear();
-            assertTrue(keySet.isEmpty());
-        } else {
-            try {
+            assertTrue( keySet.isEmpty() );
+        }
+        else
+        {
+            try
+            {
                 keySet.clear();
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testKeySetRemoveAllNullFromEmpty() {
+    public void testKeySetRemoveAllNullFromEmpty()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<K> keySet = map.keySet();
-        if (supportsRemove) {
-            try {
-                keySet.removeAll(null);
-                fail("Expected NullPointerException.");
-            } catch (NullPointerException e) {
-                // Expected.
+        if( supportsRemove )
+        {
+            try
+            {
+                keySet.removeAll( null );
+                fail( "Expected NullPointerException." );
             }
-        } else {
-            try {
-                keySet.removeAll(null);
-                fail("Expected UnsupportedOperationException or NullPointerException.");
-            } catch (UnsupportedOperationException e) {
-                // Expected.
-            } catch (NullPointerException e) {
+            catch( NullPointerException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        else
+        {
+            try
+            {
+                keySet.removeAll( null );
+                fail( "Expected UnsupportedOperationException or NullPointerException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
+                // Expected.
+            }
+            catch( NullPointerException e )
+            {
+                // Expected.
+            }
+        }
+        assertInvariants( map );
     }
 
-    public void testKeySetRetainAllNullFromEmpty() {
+    public void testKeySetRetainAllNullFromEmpty()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Set<K> keySet = map.keySet();
-        if (supportsRemove) {
-            try {
-                keySet.retainAll(null);
+        if( supportsRemove )
+        {
+            try
+            {
+                keySet.retainAll( null );
                 // Returning successfully is not ideal, but tolerated.
-            } catch (NullPointerException e) {
+            }
+            catch( NullPointerException e )
+            {
                 // Expected.
             }
-        } else {
-            try {
-                keySet.retainAll(null);
+        }
+        else
+        {
+            try
+            {
+                keySet.retainAll( null );
                 // We have to tolerate a successful return (Sun bug 4802647)
-            } catch (UnsupportedOperationException e) {
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
-            } catch (NullPointerException e) {
+            }
+            catch( NullPointerException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
-    
-    public void testKeySetIteratorLastHasNext() {
-    	final Map<K, V> map;
-        try {
+
+    public void testKeySetIteratorLastHasNext()
+    {
+        final Map<K, V> map;
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        
+
         Iterator<K> iter = map.keySet().iterator();
-        for(int i = 0; i < map.size(); i++)
-        	iter.next();
-        assertFalse(iter.hasNext());
+        for( int i = 0; i < map.size(); i++ )
+        {
+            iter.next();
+        }
+        assertFalse( iter.hasNext() );
     }
-    
-    public void testKeySetIteratorLastNext() {
-    	final Map<K, V> map;
-        try {
+
+    public void testKeySetIteratorLastNext()
+    {
+        final Map<K, V> map;
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        
+
         Iterator<K> iter = map.keySet().iterator();
-        for(int i = 0; i < map.size(); i++)
-        	iter.next();
-        try {
-        	iter.next();
+        for( int i = 0; i < map.size(); i++ )
+        {
+            iter.next();
         }
-        catch(NoSuchElementException e) {
-        	// Expected
+        try
+        {
+            iter.next();
+        }
+        catch( NoSuchElementException e )
+        {
+            // Expected
         }
     }
 
-    public void testValues() {
+    public void testValues()
+    {
         final Map<K, V> map;
         final Collection<V> valueCollection;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        assertInvariants(map);
+        assertInvariants( map );
 
         valueCollection = map.values();
         final V unmappedValue;
-        try {
+        try
+        {
             unmappedValue = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        for (V value : valueCollection) {
-            assertTrue(!unmappedValue.equals(value));
+        for( V value : valueCollection )
+        {
+            assertTrue( !unmappedValue.equals( value ) );
         }
     }
 
-    public void testValuesIteratorRemove() {
+    public void testValuesIteratorRemove()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Collection<V> valueCollection = map.values();
         Iterator<V> iterator = valueCollection.iterator();
-        if (supportsIteratorRemove) {
+        if( supportsIteratorRemove )
+        {
             int initialSize = map.size();
             iterator.next();
             iterator.remove();
-            assertEquals(initialSize - 1, map.size());
+            assertEquals( initialSize - 1, map.size() );
             // (We can't assert that the values collection no longer contains the
             // removed value, because the underlying map can have multiple mappings
             // to the same value.)
-            assertInvariants(map);
-            try {
+            assertInvariants( map );
+            try
+            {
                 iterator.remove();
-                fail("Expected IllegalStateException.");
-            } catch (IllegalStateException e) {
-                // Expected.
+                fail( "Expected IllegalStateException." );
             }
-        } else {
-            try {
-                iterator.next();
-                iterator.remove();
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+            catch( IllegalStateException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        else
+        {
+            try
+            {
+                iterator.next();
+                iterator.remove();
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
+                // Expected.
+            }
+        }
+        assertInvariants( map );
     }
 
-    public void testValuesRemove() {
+    public void testValuesRemove()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Collection<V> valueCollection = map.values();
-        if (supportsRemove) {
+        if( supportsRemove )
+        {
             int initialSize = map.size();
-            valueCollection.remove(valueCollection.iterator().next());
-            assertEquals(initialSize - 1, map.size());
+            valueCollection.remove( valueCollection.iterator().next() );
+            assertEquals( initialSize - 1, map.size() );
             // (We can't assert that the values collection no longer contains the
             // removed value, because the underlying map can have multiple mappings
             // to the same value.)
-        } else {
-            try {
-                valueCollection.remove(valueCollection.iterator().next());
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+        }
+        else
+        {
+            try
+            {
+                valueCollection.remove( valueCollection.iterator().next() );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testValuesRemoveMissing() {
+    public void testValuesRemoveMissing()
+    {
         final Map<K, V> map;
         final V valueToRemove;
-        try {
+        try
+        {
             map = makeEitherMap();
             valueToRemove = getValueNotInPopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Collection<V> valueCollection = map.values();
         int initialSize = map.size();
-        if (supportsRemove) {
-            assertTrue(!valueCollection.remove(valueToRemove));
-        } else {
-            try {
-                assertTrue(!valueCollection.remove(valueToRemove));
-            } catch (UnsupportedOperationException e) {
+        if( supportsRemove )
+        {
+            assertTrue( !valueCollection.remove( valueToRemove ) );
+        }
+        else
+        {
+            try
+            {
+                assertTrue( !valueCollection.remove( valueToRemove ) );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Tolerated.
             }
         }
-        assertEquals(initialSize, map.size());
-        assertInvariants(map);
+        assertEquals( initialSize, map.size() );
+        assertInvariants( map );
     }
 
-    public void testValuesRemoveAll() {
+    public void testValuesRemoveAll()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Collection<V> valueCollection = map.values();
-        Set<V> valuesToRemove = singleton(valueCollection.iterator().next());
-        if (supportsRemove) {
-            valueCollection.removeAll(valuesToRemove);
-            for (V value : valuesToRemove) {
-                assertTrue(!valueCollection.contains(value));
+        Set<V> valuesToRemove = singleton( valueCollection.iterator().next() );
+        if( supportsRemove )
+        {
+            valueCollection.removeAll( valuesToRemove );
+            for( V value : valuesToRemove )
+            {
+                assertTrue( !valueCollection.contains( value ) );
             }
-            for (V value : valueCollection) {
-                assertTrue(!valuesToRemove.contains(value));
+            for( V value : valueCollection )
+            {
+                assertTrue( !valuesToRemove.contains( value ) );
             }
-        } else {
-            try {
-                valueCollection.removeAll(valuesToRemove);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+        }
+        else
+        {
+            try
+            {
+                valueCollection.removeAll( valuesToRemove );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testValuesRemoveAllNullFromEmpty() {
+    public void testValuesRemoveAllNullFromEmpty()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Collection<V> values = map.values();
-        if (supportsRemove) {
-            try {
-                values.removeAll(null);
+        if( supportsRemove )
+        {
+            try
+            {
+                values.removeAll( null );
                 // Returning successfully is not ideal, but tolerated.
-            } catch (NullPointerException e) {
-                // Expected.
             }
-        } else {
-            try {
-                values.removeAll(null);
-                // We have to tolerate a successful return (Sun bug 4802647)
-            } catch (UnsupportedOperationException e) {
-                // Expected.
-            } catch (NullPointerException e) {
+            catch( NullPointerException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        else
+        {
+            try
+            {
+                values.removeAll( null );
+                // We have to tolerate a successful return (Sun bug 4802647)
+            }
+            catch( UnsupportedOperationException e )
+            {
+                // Expected.
+            }
+            catch( NullPointerException e )
+            {
+                // Expected.
+            }
+        }
+        assertInvariants( map );
     }
 
-    public void testValuesRetainAll() {
+    public void testValuesRetainAll()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Collection<V> valueCollection = map.values();
-        Set<V> valuesToRetain = singleton(valueCollection.iterator().next());
-        if (supportsRemove) {
-            valueCollection.retainAll(valuesToRetain);
-            for (V value : valuesToRetain) {
-                assertTrue(valueCollection.contains(value));
+        Set<V> valuesToRetain = singleton( valueCollection.iterator().next() );
+        if( supportsRemove )
+        {
+            valueCollection.retainAll( valuesToRetain );
+            for( V value : valuesToRetain )
+            {
+                assertTrue( valueCollection.contains( value ) );
             }
-            for (V value : valueCollection) {
-                assertTrue(valuesToRetain.contains(value));
+            for( V value : valueCollection )
+            {
+                assertTrue( valuesToRetain.contains( value ) );
             }
-        } else {
-            try {
-                valueCollection.retainAll(valuesToRetain);
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+        }
+        else
+        {
+            try
+            {
+                valueCollection.retainAll( valuesToRetain );
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
 
-    public void testValuesRetainAllNullFromEmpty() {
+    public void testValuesRetainAllNullFromEmpty()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Collection<V> values = map.values();
-        if (supportsRemove) {
-            try {
-                values.retainAll(null);
+        if( supportsRemove )
+        {
+            try
+            {
+                values.retainAll( null );
                 // Returning successfully is not ideal, but tolerated.
-            } catch (NullPointerException e) {
-                // Expected.
             }
-        } else {
-            try {
-                values.retainAll(null);
-                // We have to tolerate a successful return (Sun bug 4802647)
-            } catch (UnsupportedOperationException e) {
-                // Expected.
-            } catch (NullPointerException e) {
+            catch( NullPointerException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        else
+        {
+            try
+            {
+                values.retainAll( null );
+                // We have to tolerate a successful return (Sun bug 4802647)
+            }
+            catch( UnsupportedOperationException e )
+            {
+                // Expected.
+            }
+            catch( NullPointerException e )
+            {
+                // Expected.
+            }
+        }
+        assertInvariants( map );
     }
 
-    public void testValuesClear() {
+    public void testValuesClear()
+    {
         final Map<K, V> map;
-        try {
+        try
+        {
             map = makePopulatedMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
 
         Collection<V> valueCollection = map.values();
-        if (supportsClear) {
+        if( supportsClear )
+        {
             valueCollection.clear();
-            assertTrue(valueCollection.isEmpty());
-        } else {
-            try {
+            assertTrue( valueCollection.isEmpty() );
+        }
+        else
+        {
+            try
+            {
                 valueCollection.clear();
-                fail("Expected UnsupportedOperationException.");
-            } catch (UnsupportedOperationException e) {
+                fail( "Expected UnsupportedOperationException." );
+            }
+            catch( UnsupportedOperationException e )
+            {
                 // Expected.
             }
         }
-        assertInvariants(map);
+        assertInvariants( map );
     }
-    
-    public void testValuesIteratorLastHasNext() {
-    	final Map<K, V> map;
-        try {
+
+    public void testValuesIteratorLastHasNext()
+    {
+        final Map<K, V> map;
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        
+
         Iterator<V> iter = map.values().iterator();
-        for(int i = 0; i < map.size(); i++)
-        	iter.next();
-        assertFalse(iter.hasNext());
+        for( int i = 0; i < map.size(); i++ )
+        {
+            iter.next();
+        }
+        assertFalse( iter.hasNext() );
     }
-    
-    public void testValuesIteratorLastNext() {
-    	final Map<K, V> map;
-        try {
+
+    public void testValuesIteratorLastNext()
+    {
+        final Map<K, V> map;
+        try
+        {
             map = makeEmptyMap();
-        } catch (UnsupportedOperationException e) {
+        }
+        catch( UnsupportedOperationException e )
+        {
             return;
         }
-        
+
         Iterator<V> iter = map.values().iterator();
-        for(int i = 0; i < map.size(); i++)
-        	iter.next();
-        try {
-        	iter.next();
+        for( int i = 0; i < map.size(); i++ )
+        {
+            iter.next();
         }
-        catch(NoSuchElementException e) {
-        	// Expected
+        try
+        {
+            iter.next();
+        }
+        catch( NoSuchElementException e )
+        {
+            // Expected
         }
     }
 
-    private static <K, V> Entry<K, V> mapEntry(K key, V value) {
-        return Collections.singletonMap(key, value).entrySet().iterator().next();
+    private static <K, V> Entry<K, V> mapEntry( K key, V value )
+    {
+        return Collections.singletonMap( key, value ).entrySet().iterator().next();
     }
 }

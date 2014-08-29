@@ -1,48 +1,56 @@
 package org.mapdb;
 
-import org.junit.Test;
-
 import java.io.Serializable;
 import java.util.Map;
+import org.junit.Test;
 
-
-public class Issue249Test {
+public class Issue249Test
+{
 
     @Test
-    public void main() {
+    public void main()
+    {
         TxMaker txMaker = DBMaker.newMemoryDB().closeOnJvmShutdown()
-                .makeTxMaker();
+            .makeTxMaker();
         DB db = txMaker.makeTx();
 
         UploadInfo x = new UploadInfo();
-        x.setId(1L);
-        x.setTitle("nameXXX");
+        x.setId( 1L );
+        x.setTitle( "nameXXX" );
 
-        Map<Long, UploadInfo> map = db.getTreeMap(UploadInfo.class.getName());
-        map.put(x.getId(), x);
+        Map<Long, UploadInfo> map = db.getTreeMap( UploadInfo.class.getName() );
+        map.put( x.getId(), x );
 
-        db = commit(db);
-        db = rollback(db);
+        db = commit( db );
+        db = rollback( db );
 
         DB db2 = txMaker.makeTx();
-        Map<Long, UploadInfo> map2 = db2.getTreeMap(UploadInfo.class.getName());
-        map2.get(x.getId());
+        Map<Long, UploadInfo> map2 = db2.getTreeMap( UploadInfo.class.getName() );
+        map2.get( x.getId() );
 
         txMaker.close();
     }
 
-    private static DB commit(DB db) {
-        if (db != null && !db.isClosed())
+    private static DB commit( DB db )
+    {
+        if( db != null && !db.isClosed() )
+        {
             db.commit();
+        }
         // db = null;
         return db;
     }
 
-    private static DB rollback(DB db) {
-        if (db != null && !db.isClosed()) {
-            try {
+    private static DB rollback( DB db )
+    {
+        if( db != null && !db.isClosed() )
+        {
+            try
+            {
                 db.rollback();
-            } catch (Exception e) {
+            }
+            catch( Exception e )
+            {
             }
         }
         // db = null;
@@ -50,7 +58,8 @@ public class Issue249Test {
     }
 
     @SuppressWarnings("serial")
-    public static class UploadInfo implements Serializable {
+    public static class UploadInfo implements Serializable
+    {
 
         private Long id;
         private String slug;
@@ -59,54 +68,64 @@ public class Issue249Test {
         private String text;
         private String title;
 
-        public Long getId() {
+        public Long getId()
+        {
             return id;
         }
 
-        public void setId(Long id) {
+        public void setId( Long id )
+        {
             this.id = id;
         }
 
-        public String getSlug() {
+        public String getSlug()
+        {
             return slug;
         }
 
-        public void setSlug(String slug) {
+        public void setSlug( String slug )
+        {
             this.slug = slug;
         }
 
-        public String getZipCode() {
+        public String getZipCode()
+        {
             return zipCode;
         }
 
-        public void setZipCode(String zipCode) {
+        public void setZipCode( String zipCode )
+        {
             this.zipCode = zipCode;
         }
 
-        public String getWww() {
+        public String getWww()
+        {
             return www;
         }
 
-        public void setWww(String www) {
+        public void setWww( String www )
+        {
             this.www = www;
         }
 
-        public String getText() {
+        public String getText()
+        {
             return text;
         }
 
-        public void setText(String text) {
+        public void setText( String text )
+        {
             this.text = text;
         }
 
-        public String getTitle() {
+        public String getTitle()
+        {
             return title;
         }
 
-        public void setTitle(String title) {
+        public void setTitle( String title )
+        {
             this.title = title;
         }
-
     }
-
 }

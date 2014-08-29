@@ -1,11 +1,11 @@
 package examples;
 
-import org.mapdb.Atomic;
+import java.io.IOException;
+import java.util.Map;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.Serializer;
-
-import java.util.Map;
+import org.mapdb.impl.Atomic;
+import org.mapdb.impl.SerializerBase;
 
 /**
  * All collections are loaded lazily by default.
@@ -13,11 +13,13 @@ import java.util.Map;
  * only small currently used portion (typically single tree node) is loaded into heap.
  * But even single tree node can be too large (for example 32 key-value pairs),
  * and you may want to load even single values lazily.
- *
  */
-public class Lazily_Loaded_Records {
+public class Lazily_Loaded_Records
+{
 
-    public static void main(String[] args) {
+    public static void main( String[] args )
+        throws IOException
+    {
 
         DB db = DBMaker.newMemoryDB().make();
         //
@@ -27,10 +29,8 @@ public class Lazily_Loaded_Records {
         //
         // use DB.createTreeMap to create TreeMap with non-default parameters
 
-
-        Map map = db.createTreeMap("name").valuesOutsideNodesEnable().make();
-        map.put("key","this string is loaded lazily with 'map.get(key)' ");
-
+        Map map = db.createTreeMap( "name" ).valuesOutsideNodesEnable().make();
+        map.put( "key", "this string is loaded lazily with 'map.get(key)' " );
 
         //
         // Other option for lazily loaded record is to use Atomic.Var.
@@ -38,11 +38,10 @@ public class Lazily_Loaded_Records {
         // As bonus you can update reference in thread-safe atomic manner.
         //
         Atomic.Var<String> record =
-                db.createAtomicVar("lazyRecord", "aaa", db.getDefaultSerializer());
+            db.createAtomicVar( "lazyRecord", "aaa", db.getDefaultSerializer() );
 
-        record.set("some value");
-        System.out.println(record.get());
-
+        record.set( "some value" );
+        System.out.println( record.get() );
 
         // Last option is to use low level Engine storage directly.
         // Each stored record gets assigned unique recid (record id),
@@ -51,17 +50,15 @@ public class Lazily_Loaded_Records {
         // All MapDB collections are written this way.
 
         //insert new record
-        long recid = db.getEngine().put("something", Serializer.STRING_NOSIZE);
+        long recid = db.getEngine().put( "something", SerializerBase.STRING_NOSIZE );
 
         //load record
-        String lazyString = db.getEngine().get(recid, Serializer.STRING_NOSIZE);
+        String lazyString = db.getEngine().get( recid, SerializerBase.STRING_NOSIZE );
 
         //update record
-        db.getEngine().update(recid, "new value", Serializer.STRING_NOSIZE);
-
+        db.getEngine().update( recid, "new value", SerializerBase.STRING_NOSIZE );
 
         //I hope this example helped!
         db.close();
-
     }
 }

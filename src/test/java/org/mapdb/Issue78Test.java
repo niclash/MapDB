@@ -1,34 +1,38 @@
 package org.mapdb;
 
+import java.io.IOError;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOError;
 
 /**
  * https://github.com/jankotek/MapDB/issues/78
  *
  * @author Nandor Kracser
  */
-public class Issue78Test {
+public class Issue78Test
+{
 
     @Before
-    public void setUp() {
+    public void setUp()
+    {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown()
+    {
     }
 
     @Test(expected = IOError.class, timeout = 10000)
-    public void testIssue() {
+    public void testIssue()
+    {
         DB db = DBMaker.newTempFileDB().make();
-        HTreeMap<String, NotSerializable> usersMap = db.getHashMap("values");
-        usersMap.put("thisKillsTheAsyncWriteThread", new NotSerializable());
+        HTreeMap<String, NotSerializable> usersMap = db.getHashMap( "values" );
+        usersMap.put( "thisKillsTheAsyncWriteThread", new NotSerializable() );
         db.commit();
     }
 
-    class NotSerializable {
+    class NotSerializable
+    {
     }
 }

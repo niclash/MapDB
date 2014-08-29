@@ -17,6 +17,7 @@
 package org.mapdb;
 
 import java.io.Closeable;
+import org.mapdb.impl.SerializerPojo;
 
 /**
  * Centerpiece for record management, `Engine` is simple key value store.
@@ -33,8 +34,8 @@ import java.io.Closeable;
  * cache to minimise number of deserializations, or modified instance can
  * be placed into queue and asynchronously written on background thread.
  *
- * There is {@link Store} subinterface for raw persistence
- * Most of MapDB features comes from {@link EngineWrapper}s, which are stacked on
+ * There is {@link org.mapdb.impl.Store} subinterface for raw persistence
+ * Most of MapDB features comes from {@link org.mapdb.impl.EngineWrapper}s, which are stacked on
  * top of each other to provide asynchronous writes, instance cache, encryption etc..
  * `Engine` stack is very elegant and uniform way to handle additional functionality.
  * Other DBs need an ORM framework to achieve similar features.
@@ -42,8 +43,8 @@ import java.io.Closeable;
  * In default configuration MapDB runs with this `Engine` stack:
  *
  *  * **DISK** - raw file or memory
- *  * {@link org.mapdb.StoreWAL} - permanent record store with transactions
- *  * {@link org.mapdb.Caches.HashTable} - instance cache
+ *  * {@link org.mapdb.impl.StoreWAL} - permanent record store with transactions
+ *  * {@link org.mapdb.impl.Caches.HashTable} - instance cache
  *  * **USER** - {@link DB} and collections
  *
  * TODO document more examples of Engine  wrappers
@@ -91,7 +92,7 @@ public interface Engine  extends Closeable {
      * @param serializer used to convert record into/from binary form
      * @return recid (record identifier) under which record is stored.
      */
-    <A> long put(A value, Serializer<A> serializer);
+    <A> long put(A value, ValueSerializer<A> serializer);
 
     /**
      * Get existing record.
@@ -104,7 +105,7 @@ public interface Engine  extends Closeable {
      * @param serializer used to deserialize record from binary form
      * @return record matching given recid, or null if record is not found under given recid.
      */
-    <A> A get(long recid, Serializer<A> serializer);
+    <A> A get(long recid, ValueSerializer<A> serializer);
 
     /**
      * Update existing record with new value.
@@ -118,7 +119,7 @@ public interface Engine  extends Closeable {
      * @param value new record value to be stored
      * @param serializer used to serialize record into binary form
      */
-    <A> void update(long recid, A value, Serializer<A> serializer);
+    <A> void update(long recid, A value, ValueSerializer<A> serializer);
 
 
     /**
@@ -141,7 +142,7 @@ public interface Engine  extends Closeable {
      * @param serializer used to serialize record into binary form
      * @return true if values matched and newValue was written
      */
-    <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, Serializer<A> serializer);
+    <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer);
 
     /**
      * Remove existing record from store/cache
@@ -155,7 +156,7 @@ public interface Engine  extends Closeable {
      * @param recid (record identifier) under which was record persisted
      * @param serializer which may be used in some circumstances to deserialize and store old object
      */
-    <A> void delete(long recid, Serializer<A>  serializer);
+    <A> void delete(long recid, ValueSerializer<A> serializer);
 
 
 
@@ -166,7 +167,7 @@ public interface Engine  extends Closeable {
      * Engine can no longer be used after this method was called. If Engine is used after closing, it may
      * throw any exception including <code>NullPointerException</code>
      * </p>
-     * There is an configuration option {@link DBMaker#closeOnJvmShutdown()} which uses shutdown hook to automatically
+     * There is an configuration option {@link org.mapdb.impl.DBMakerImpl#closeOnJvmShutdown()} which uses shutdown hook to automatically
      * close Engine when JVM shutdowns.
      */
     void close();
@@ -210,7 +211,7 @@ public interface Engine  extends Closeable {
     /**
      * Returns read-only snapshot of data in Engine.
      *
-     * @see EngineWrapper#canSnapshot()
+     * @see org.mapdb.impl.EngineWrapper#canSnapshot()
      * @throws UnsupportedOperationException if snapshots are not supported/enabled
      */
     Engine snapshot() throws UnsupportedOperationException;

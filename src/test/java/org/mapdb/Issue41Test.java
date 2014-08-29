@@ -1,21 +1,31 @@
 package org.mapdb;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.*;
-import java.util.Iterator;
-import java.util.UUID;
-import java.util.concurrent.*;
+import org.mapdb.impl.UtilsTest;
 
 /**
  * https://github.com/jankotek/MapDB/issues/41
+ *
  * @author Laurent Pellegrino
  *
- * TODO fully investigate this concurrent issue.
+ *         TODO fully investigate this concurrent issue.
  */
-public class Issue41Test {
+public class Issue41Test
+{
 
     private static int NB_OPERATIONS = 1000;
 
@@ -32,94 +42,116 @@ public class Issue41Test {
     private CountDownLatch doneSignal;
 
     @Before
-    public void setUp() {
+    public void setUp()
+    {
         db =
-                DBMaker.newFileDB(DB_PATH)
-                        .cacheSoftRefEnable()
-                        .closeOnJvmShutdown()
-                        .deleteFilesAfterClose()
-                        .transactionDisable()
-                        .make();
+            DBMaker.newFileDB( DB_PATH )
+                .cacheSoftRefEnable()
+                .closeOnJvmShutdown()
+                .deleteFilesAfterClose()
+                .transactionDisable()
+                .make();
 
         map =
-                db.createHashMap(MAP_NAME)
-                        .keySerializer(new Key.Serializer())
-                        .valueSerializer(new Value.Serializer())
-                        .make();
+            db.createHashMap( MAP_NAME )
+                .keySerializer( new Key.Serializer() )
+                .valueSerializer( new Value.Serializer() )
+                .make();
 
-        threadPool = Executors.newFixedThreadPool(16);
+        threadPool = Executors.newFixedThreadPool( 16 );
 
-        doneSignal = new CountDownLatch(NB_OPERATIONS);
-
-
+        doneSignal = new CountDownLatch( NB_OPERATIONS );
     }
 
     @Test
-    public void test1() throws InterruptedException {
+    public void test1()
+        throws InterruptedException
+    {
         final Value value = new Value();
-        final Key key = new Key(value, "http://www.mapdb.org/");
+        final Key key = new Key( value, "http://www.mapdb.org/" );
 
-        for (int i = 0; i < NB_OPERATIONS; i++) {
+        for( int i = 0; i < NB_OPERATIONS; i++ )
+        {
             final int j = i;
 
-            threadPool.execute(new Runnable() {
+            threadPool.execute( new Runnable()
+            {
 
                 @Override
-                public void run() {
-                    try {
-                        map.put(key, value);
-                    } finally {
+                public void run()
+                {
+                    try
+                    {
+                        map.put( key, value );
+                    }
+                    finally
+                    {
                         doneSignal.countDown();
 //                        System.out.println("OP " + j);
                     }
                 }
-            });
+            } );
         }
     }
 
     @Test
-    public void test2() throws InterruptedException {
+    public void test2()
+        throws InterruptedException
+    {
         final ConcurrentMap<Key, Value> alreadyAdded =
-                new ConcurrentHashMap<Key, Value>();
+            new ConcurrentHashMap<Key, Value>();
 
-        for (int i = 0; i < NB_OPERATIONS; i++) {
+        for( int i = 0; i < NB_OPERATIONS; i++ )
+        {
             final int j = i;
 
-            threadPool.execute(new Runnable() {
+            threadPool.execute( new Runnable()
+            {
 
                 @Override
-                public void run() {
-                    try {
-                        if (j % 2 == 0) {
+                public void run()
+                {
+                    try
+                    {
+                        if( j % 2 == 0 )
+                        {
                             Value value = new Value();
-                            Key key = new Key(value, Integer.toString(j));
+                            Key key = new Key( value, Integer.toString( j ) );
 
-                            alreadyAdded.putIfAbsent(key, value);
-                            map.putIfAbsent(key, value);
-                        } else {
+                            alreadyAdded.putIfAbsent( key, value );
+                            map.putIfAbsent( key, value );
+                        }
+                        else
+                        {
                             Iterator<Key> it = alreadyAdded.keySet().iterator();
 
-                            if (it.hasNext()) {
-                                map.get(it.next());
+                            if( it.hasNext() )
+                            {
+                                map.get( it.next() );
                             }
                         }
-                    } finally {
+                    }
+                    finally
+                    {
                         doneSignal.countDown();
 //                        System.out.println("OP " + j);
                     }
                 }
-            });
+            } );
         }
     }
 
     @After
-    public void tearDown() throws InterruptedException {
+    public void tearDown()
+        throws InterruptedException, IOException
+    {
         doneSignal.await();
         threadPool.shutdown();
         db.close();
     }
 
-    public static class Value implements Serializable {
+    public static class Value implements Serializable
+    {
 
         private static final long serialVersionUID = 1L;
 
@@ -127,74 +159,87 @@ public class Issue41Test {
 
         protected final UUID value;
 
-        public Value() {
+        public Value()
+        {
             this.value = UUID.randomUUID();
         }
 
-        private Value(UUID uuid) {
+        private Value( UUID uuid )
+        {
             this.value = uuid;
         }
 
         @Override
-        public int hashCode() {
+        public int hashCode()
+        {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((this.value == null)
-                    ? 0 : this.value.hashCode());
+            result = prime * result + ( ( this.value == null )
+                                        ? 0 : this.value.hashCode() );
             return result;
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
+        public boolean equals( Object obj )
+        {
+            if( this == obj )
+            {
                 return true;
             }
-            if (obj == null) {
+            if( obj == null )
+            {
                 return false;
             }
-            if (!(obj instanceof Value)) {
+            if( !( obj instanceof Value ) )
+            {
                 return false;
             }
             Value other = (Value) obj;
-            if (this.value == null) {
-                if (other.value != null) {
+            if( this.value == null )
+            {
+                if( other.value != null )
+                {
                     return false;
                 }
-            } else if (!this.value.equals(other.value)) {
+            }
+            else if( !this.value.equals( other.value ) )
+            {
                 return false;
             }
             return true;
         }
 
         public static final class Serializer implements
-                org.mapdb.Serializer<Value>, Serializable {
+                                             ValueSerializer<Value>, Serializable
+        {
 
             private static final long serialVersionUID = 140L;
 
             @Override
-            public void serialize(DataOutput out, Value value)
-                    throws IOException {
-                out.writeLong(value.value.getMostSignificantBits());
-                out.writeLong(value.value.getLeastSignificantBits());
+            public void serialize( DataOutput out, Value value )
+                throws IOException
+            {
+                out.writeLong( value.value.getMostSignificantBits() );
+                out.writeLong( value.value.getLeastSignificantBits() );
             }
 
             @Override
-            public Value deserialize(DataInput in, int available)
-                    throws IOException {
-                return new Value(new UUID(in.readLong(), in.readLong()));
+            public Value deserialize( DataInput in, int available )
+                throws IOException
+            {
+                return new Value( new UUID( in.readLong(), in.readLong() ) );
             }
 
             @Override
-            public int fixedSize() {
+            public int fixedSize()
+            {
                 return -1;
             }
-
-
         }
-
     }
 
-    public static class Key implements Serializable {
+    public static class Key implements Serializable
+    {
 
         private static final long serialVersionUID = 1L;
 
@@ -202,85 +247,97 @@ public class Issue41Test {
 
         protected final String eventId;
 
-        public Key(Value subscriptionId, String eventId) {
+        public Key( Value subscriptionId, String eventId )
+        {
             this.subscriptionId = subscriptionId;
             this.eventId = eventId;
         }
 
         @Override
-        public int hashCode() {
+        public int hashCode()
+        {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((this.eventId == null)
-                    ? 0 : this.eventId.hashCode());
-            result = prime * result + ((this.subscriptionId == null)
-                    ? 0 : this.subscriptionId.hashCode());
+            result = prime * result + ( ( this.eventId == null )
+                                        ? 0 : this.eventId.hashCode() );
+            result = prime * result + ( ( this.subscriptionId == null )
+                                        ? 0 : this.subscriptionId.hashCode() );
             return result;
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
+        public boolean equals( Object obj )
+        {
+            if( this == obj )
+            {
                 return true;
             }
-            if (obj == null) {
+            if( obj == null )
+            {
                 return false;
             }
-            if (!(obj instanceof Key)) {
+            if( !( obj instanceof Key ) )
+            {
                 return false;
             }
             Key other = (Key) obj;
-            if (this.eventId == null) {
-                if (other.eventId != null) {
+            if( this.eventId == null )
+            {
+                if( other.eventId != null )
+                {
                     return false;
                 }
-            } else if (!this.eventId.equals(other.eventId)) {
+            }
+            else if( !this.eventId.equals( other.eventId ) )
+            {
                 return false;
             }
-            if (this.subscriptionId == null) {
-                if (other.subscriptionId != null) {
+            if( this.subscriptionId == null )
+            {
+                if( other.subscriptionId != null )
+                {
                     return false;
                 }
-            } else if (!this.subscriptionId.equals(other.subscriptionId)) {
+            }
+            else if( !this.subscriptionId.equals( other.subscriptionId ) )
+            {
                 return false;
             }
             return true;
         }
 
         public static final class Serializer implements
-                org.mapdb.Serializer<Key>, Serializable {
+                                             ValueSerializer<Key>, Serializable
+        {
 
             private static final long serialVersionUID = 1L;
 
             @Override
-            public void serialize(DataOutput out, Key notificationId)
-                    throws IOException {
-                out.writeUTF(notificationId.eventId);
+            public void serialize( DataOutput out, Key notificationId )
+                throws IOException
+            {
+                out.writeUTF( notificationId.eventId );
 
-                Value.SERIALIZER.serialize(out, notificationId.subscriptionId);
+                Value.SERIALIZER.serialize( out, notificationId.subscriptionId );
             }
 
             @Override
-            public Key deserialize(DataInput in, int available)
-                    throws IOException {
+            public Key deserialize( DataInput in, int available )
+                throws IOException
+            {
                 String eventId = in.readUTF();
 
                 Value subscriptionId =
-                        Value.SERIALIZER.deserialize(in, available);
+                    Value.SERIALIZER.deserialize( in, available );
 
-                return new Key(subscriptionId, eventId);
+                return new Key( subscriptionId, eventId );
             }
-
 
             @Override
-            public int fixedSize() {
+            public int fixedSize()
+            {
                 return -1;
             }
-
         }
-
     }
-
-
-
 }
