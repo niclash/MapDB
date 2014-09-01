@@ -25,6 +25,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import java.util.zip.CRC32;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.longmap.LongConcurrentHashMap;
+import org.mapdb.impl.longmap.LongHashMap;
+import org.mapdb.impl.longmap.LongMap;
 
 /**
  * Write-Ahead-Log

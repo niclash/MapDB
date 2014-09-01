@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mapdb.impl.SerializerBase;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

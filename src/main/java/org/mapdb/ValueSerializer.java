@@ -39,13 +39,12 @@ public interface ValueSerializer<A>
      * Deserialize the content of an object from a DataInput.
      *
      * @param in        to read serialized data from
-     * @param available how many bytes are available in DataInput for reading, may be -1 (in streams) or 0 (null).
      *
      * @return deserialized object
      *
      * @throws java.io.IOException
      */
-    public A deserialize( DataInput in, int available )
+    public A deserialize( DataInput in )
         throws IOException;
 
     /**

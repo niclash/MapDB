@@ -25,6 +25,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import org.mapdb.Engine;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.engine.EngineWrapper;
+import org.mapdb.impl.longmap.LongConcurrentHashMap;
+import org.mapdb.impl.longmap.LongConcurrentLRUMap;
+import org.mapdb.impl.longmap.LongHashMap;
+import org.mapdb.impl.longmap.LongMap;
 
 /**
  * Contains various instance cache implementations

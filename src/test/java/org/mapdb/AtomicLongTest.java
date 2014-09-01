@@ -7,7 +7,6 @@ package org.mapdb;/*
  */
 
 import junit.framework.TestCase;
-import org.mapdb.impl.Atomic;
 
 public class AtomicLongTest extends TestCase
 {

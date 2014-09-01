@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Random;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.mapdb.impl.engine.DbImpl;
 
 /**
  * This demonstrates using Data Pump to first create store in-memory at maximal speed,

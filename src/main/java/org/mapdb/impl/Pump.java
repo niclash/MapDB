@@ -22,6 +22,14 @@ import org.mapdb.DB;
 import org.mapdb.Engine;
 import org.mapdb.KeySerializer;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.btree.BTreeDirNode;
+import org.mapdb.impl.btree.BTreeLeafNode;
+import org.mapdb.impl.btree.BTreeMapImpl;
+import org.mapdb.impl.btree.BTreeNode;
+import org.mapdb.impl.btree.BTreeNodeSerializer;
+import org.mapdb.impl.btree.BTreeValRef;
+import org.mapdb.impl.engine.DbImpl;
 
 /**
  * Data Pump moves data from one source to other.
@@ -94,7 +102,7 @@ public final class Pump {
                     presortFiles.add(f);
                     DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f)));
                     for(Object e:presort){
-                        serializer.serialize(out,e);
+                        serializer.serialize( out, e );
                     }
                     out.close();
                     presortCount2.add(counter);
@@ -339,7 +347,7 @@ public final class Pump {
 
         final double NODE_LOAD = 0.75;
 
-        ValueSerializer<BTreeMapImpl.BNode> nodeSerializer = new BTreeMapImpl.NodeSerializer(valuesStoredOutsideNodes,keySerializer,valueSerializer,comparator,0);
+        ValueSerializer<BTreeNode> nodeSerializer = new BTreeNodeSerializer(valuesStoredOutsideNodes,keySerializer,valueSerializer,comparator,0);
 
 
         final int nload = (int) (nodeSize * NODE_LOAD);
@@ -381,7 +389,7 @@ public final class Pump {
                 if(val==null) throw new NullPointerException("extractValue returned null value");
                 if(valuesStoredOutsideNodes){
                     long recid = engine.put((V) val,valueSerializer);
-                    val = new BTreeMapImpl.ValRef(recid);
+                    val = new BTreeValRef(recid);
                 }
                 values.add(val);
 
@@ -397,10 +405,7 @@ public final class Pump {
             Object nextVal = values.remove(values.size()-1);
             Collections.reverse(values);
 
-
-
-
-            BTreeMapImpl.LeafNode node = new BTreeMapImpl.LeafNode(keys.toArray(),values.toArray() , nextNode);
+            BTreeLeafNode<K,V> node = new BTreeLeafNode<K,V>(keys.toArray(),values.toArray() , nextNode);
             nextNode = engine.put(node,nodeSerializer);
             K nextKey = keys.get(0);
             keys.clear();
@@ -421,7 +426,7 @@ public final class Pump {
                 Collections.reverse(dirKeys.get(i));
                 Collections.reverse(dirRecids.get(i));
                 //put node into store
-                BTreeMapImpl.DirNode dir = new BTreeMapImpl.DirNode(dirKeys.get(i).toArray(), dirRecids.get(i));
+                BTreeDirNode dir = new BTreeDirNode(dirKeys.get(i).toArray(), dirRecids.get(i));
                 long dirRecid = engine.put(dir,nodeSerializer);
                 Object dirStart = dirKeys.get(i).get(0);
                 dirKeys.get(i).clear();
@@ -453,7 +458,7 @@ public final class Pump {
             }
 
             //put node into store
-            BTreeMapImpl.DirNode dir = new BTreeMapImpl.DirNode(keys2.toArray(), dirRecids.get(i));
+            BTreeDirNode dir = new BTreeDirNode(keys2.toArray(), dirRecids.get(i));
             long dirRecid = engine.put(dir,nodeSerializer);
             Object dirStart = keys2.get(0);
             dirKeys.get(i+1).add(dirStart);
@@ -470,7 +475,7 @@ public final class Pump {
         if(counterRecid!=0)
             engine.update(counterRecid, counter, SerializerBase.LONG);
 
-        BTreeMapImpl.DirNode dir = new BTreeMapImpl.DirNode(dirKeys.get(len).toArray(), dirRecids.get(len));
+        BTreeDirNode dir = new BTreeDirNode(dirKeys.get(len).toArray(), dirRecids.get(len));
         long rootRecid = engine.put(dir, nodeSerializer);
         return engine.put(rootRecid, SerializerBase.LONG); //root recid
     }

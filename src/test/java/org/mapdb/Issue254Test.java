@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import org.junit.Test;
-import org.mapdb.impl.Atomic;
 import org.mapdb.impl.UtilsTest;
 
 import static org.junit.Assert.assertEquals;

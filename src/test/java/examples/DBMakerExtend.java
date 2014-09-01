@@ -8,7 +8,7 @@ import org.mapdb.DB;
 import org.mapdb.Engine;
 import org.mapdb.ValueSerializer;
 import org.mapdb.impl.DbBuilderImpl;
-import org.mapdb.impl.EngineWrapper;
+import org.mapdb.impl.engine.EngineWrapper;
 
 /**
  * DBMaker behavior can be extended or modified by extending class and overriding `extendXXX()` methods.

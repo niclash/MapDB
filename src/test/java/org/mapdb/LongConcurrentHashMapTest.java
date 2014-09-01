@@ -10,7 +10,7 @@ package org.mapdb;
 
 import java.util.Iterator;
 import junit.framework.TestCase;
-import org.mapdb.impl.LongConcurrentHashMap;
+import org.mapdb.impl.longmap.LongConcurrentHashMap;
 
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class LongConcurrentHashMapTest extends TestCase

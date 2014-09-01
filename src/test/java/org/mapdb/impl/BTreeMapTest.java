@@ -16,6 +16,11 @@ import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Engine;
+import org.mapdb.impl.binaryserializer.BTreeKeySerializer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.btree.BTreeDirNode;
+import org.mapdb.impl.btree.BTreeLeafNode;
+import org.mapdb.impl.btree.BTreeMapImpl;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -54,8 +59,8 @@ public class BTreeMapTest
         throws IOException
     {
 
-        BTreeMapImpl.LeafNode n = new BTreeMapImpl.LeafNode( new Object[]{ null, 1, 2, 3, null }, new Object[]{ 1, 2, 3 }, 111 );
-        BTreeMapImpl.LeafNode n2 = (BTreeMapImpl.LeafNode) UtilsTest.clone( n, m.nodeSerializer );
+        BTreeLeafNode n = new BTreeLeafNode( new Object[]{ null, 1, 2, 3, null }, new Object[]{ 1, 2, 3 }, 111 );
+        BTreeLeafNode n2 = (BTreeLeafNode) UtilsTest.clone( n, m.nodeSerializer );
         assertArrayEquals( n.keys(), n2.keys() );
         assertEquals( n.next, n2.next );
     }
@@ -65,8 +70,8 @@ public class BTreeMapTest
         throws IOException
     {
 
-        BTreeMapImpl.DirNode n = new BTreeMapImpl.DirNode( new Object[]{ 1, 2, 3, null }, new long[]{ 4, 5, 6, 7 } );
-        BTreeMapImpl.DirNode n2 = (BTreeMapImpl.DirNode) UtilsTest.clone( n, m.nodeSerializer );
+        BTreeDirNode n = new BTreeDirNode( new Object[]{ 1, 2, 3, null }, new long[]{ 4, 5, 6, 7 } );
+        BTreeDirNode n2 = (BTreeDirNode) UtilsTest.clone( n, m.nodeSerializer );
 
         assertArrayEquals( n.keys(), n2.keys() );
         assertArrayEquals( n.child, n2.child );
@@ -90,7 +95,7 @@ public class BTreeMapTest
     public void test_next_dir()
     {
 
-        BTreeMapImpl.DirNode d = new BTreeMapImpl.DirNode( new Integer[]{ 44, 62, 68, 71 }, new long[]{ 10, 20, 30, 40 } );
+        BTreeDirNode d = new BTreeDirNode( new Integer[]{ 44, 62, 68, 71 }, new long[]{ 10, 20, 30, 40 } );
 
         assertEquals( 10, m.nextDir( d, 62 ) );
         assertEquals( 10, m.nextDir( d, 44 ) );
@@ -112,14 +117,14 @@ public class BTreeMapTest
     public void test_next_dir_infinity()
     {
 
-        BTreeMapImpl.DirNode d = new BTreeMapImpl.DirNode(
+        BTreeDirNode d = new BTreeDirNode(
             new Object[]{ null, 62, 68, 71 },
             new long[]{ 10, 20, 30, 40 } );
         assertEquals( 10, m.nextDir( d, 33 ) );
         assertEquals( 10, m.nextDir( d, 62 ) );
         assertEquals( 20, m.nextDir( d, 63 ) );
 
-        d = new BTreeMapImpl.DirNode(
+        d = new BTreeDirNode(
             new Object[]{ 44, 62, 68, null },
             new long[]{ 10, 20, 30, 40 } );
 
@@ -143,7 +148,7 @@ public class BTreeMapTest
     public void simple_root_get()
     {
 
-        BTreeMapImpl.LeafNode l = new BTreeMapImpl.LeafNode(
+        BTreeLeafNode l = new BTreeLeafNode(
             new Object[]{ null, 10, 20, 30, null },
             new Object[]{ 10, 20, 30 },
             0 );
@@ -168,7 +173,7 @@ public class BTreeMapTest
 
         m.put( 11, 12 );
         final long rootRecid = engine.get( m.rootRecidRef, SerializerBase.LONG );
-        BTreeMapImpl.LeafNode n = (BTreeMapImpl.LeafNode) engine.get( rootRecid, m.nodeSerializer );
+        BTreeLeafNode n = (BTreeLeafNode) engine.get( rootRecid, m.nodeSerializer );
         assertArrayEquals( new Object[]{ null, 11, null }, n.keys );
         assertArrayEquals( new Object[]{ 12 }, n.vals );
         assertEquals( 0, n.next );

@@ -24,6 +24,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mapdb.DBMaker;
 import org.mapdb.Engine;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.htree.HTreeMapImpl;
 
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.assertEquals;

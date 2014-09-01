@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.junit.Test;
 import org.mapdb.impl.CompressionWrapper;
 import org.mapdb.impl.DataOutput2;
-import org.mapdb.impl.SerializerBase;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 import org.mapdb.impl.SerializerBaseTest;
 
 import static org.junit.Assert.assertArrayEquals;

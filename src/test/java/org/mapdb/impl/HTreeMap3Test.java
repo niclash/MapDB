@@ -17,6 +17,8 @@ package org.mapdb.impl;
 
 import java.util.concurrent.ConcurrentMap;
 import org.mapdb.ConcurrentMapInterfaceTest;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.htree.HTreeMapImpl;
 
 public class HTreeMap3Test extends ConcurrentMapInterfaceTest<Integer, String>
 {

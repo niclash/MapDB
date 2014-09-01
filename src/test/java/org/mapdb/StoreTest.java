@@ -3,7 +3,7 @@ package org.mapdb;
 import java.util.Arrays;
 import java.util.Random;
 import org.junit.Test;
-import org.mapdb.impl.SerializerBase;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 import org.mapdb.impl.Store;
 
 import static org.junit.Assert.assertArrayEquals;

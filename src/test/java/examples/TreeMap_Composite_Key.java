@@ -5,7 +5,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentNavigableMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.impl.BTreeKeySerializer;
+import org.mapdb.impl.binaryserializer.BTreeKeySerializer;
 import org.mapdb.impl.Fun;
 
 /**

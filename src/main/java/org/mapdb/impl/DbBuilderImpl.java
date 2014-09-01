@@ -20,11 +20,17 @@ import org.mapdb.DB;
 import org.mapdb.DBBuilder;
 import org.mapdb.Engine;
 import org.mapdb.TxMaker;
-import org.mapdb.impl.EngineWrapper.ReadOnlyEngine;
+import org.mapdb.impl.engine.AsyncWriteEngine;
+import org.mapdb.impl.engine.EngineWrapper;
+import org.mapdb.impl.engine.EngineWrapper.ReadOnlyEngine;
 
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.*;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.engine.DbImpl;
+import org.mapdb.impl.engine.TxEngine;
+import org.mapdb.impl.engine.TxMakerImpl;
 
 /**
  * A builder class for creating and opening a database.
@@ -562,7 +568,7 @@ public class DbBuilderImpl
         Engine engine = makeEngine();
         boolean dbCreated = false;
         try{
-            DB db =  new  DbImpl(engine, strictGet,false);
+            DB db =  new DbImpl(engine, strictGet,false);
             dbCreated = true;
             return db;
         }finally {

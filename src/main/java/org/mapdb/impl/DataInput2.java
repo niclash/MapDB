@@ -19,6 +19,7 @@ package org.mapdb.impl;
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 
 /**
  * Wraps {@link ByteBuffer} and provides {@link DataInput}

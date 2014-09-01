@@ -6,10 +6,12 @@ import java.io.Serializable;
 import java.util.Map;
 import org.mapdb.Engine;
 import org.mapdb.JSR166TestCase;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.btree.BTreeMapImpl;
 
-import static org.mapdb.impl.BTreeKeySerializer.BASIC;
-import static org.mapdb.impl.BTreeMapImpl.COMPARABLE_COMPARATOR;
-import static org.mapdb.impl.BTreeMapImpl.createRootRef;
+import static org.mapdb.impl.binaryserializer.BTreeKeySerializer.BASIC;
+import static org.mapdb.impl.btree.BTreeMapImpl.COMPARABLE_COMPARATOR;
+import static org.mapdb.impl.btree.BTreeMapImpl.createRootRef;
 
 public class BTreeMapContainsKeyTest extends JSR166TestCase
 {

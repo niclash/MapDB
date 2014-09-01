@@ -19,6 +19,11 @@ import org.mapdb.Engine;
 import org.mapdb.HTreeMap;
 import org.mapdb.Hasher;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.engine.DbImpl;
+import org.mapdb.impl.htree.ExpireLinkNode;
+import org.mapdb.impl.htree.HTreeLinkedNode;
+import org.mapdb.impl.htree.HTreeMapImpl;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -98,13 +103,13 @@ public class HTreeMap2Test
                             {
                                 s += prefix + "    " + "Array.asList(";
                                 TreeMap m = new TreeMap();
-                                HTreeMapImpl.LinkedNode node =
-                                    (HTreeMapImpl.LinkedNode) engine.get
+                                HTreeLinkedNode node =
+                                    (HTreeLinkedNode) engine.get
                                         ( r2 >>> 1, serializer );
                                 while( node != null )
                                 {
                                     m.put( node.key, node.value );
-                                    node = (HTreeMapImpl.LinkedNode) engine.get( node.next, serializer );
+                                    node = (HTreeLinkedNode) engine.get( node.next, serializer );
                                 }
                                 for( Object k : m.keySet() )
                                 {
@@ -160,7 +165,7 @@ public class HTreeMap2Test
     public void ln_serialization()
         throws IOException
     {
-        HTreeMapImpl.LinkedNode n = new HTreeMapImpl.LinkedNode( 123456, 1111L, 123L, 456L );
+        HTreeLinkedNode n = new HTreeLinkedNode( 123456, 1111L, 123L, 456L );
 
         DataOutput2 out = new DataOutput2();
 
@@ -168,7 +173,7 @@ public class HTreeMap2Test
 
         DataInput2 in = swap( out );
 
-        HTreeMapImpl.LinkedNode n2 = (HTreeMapImpl.LinkedNode) serializer.deserialize( in, -1 );
+        HTreeLinkedNode n2 = (HTreeLinkedNode) serializer.deserialize( in, -1 );
 
         assertEquals( 123456, n2.next );
         assertEquals( 0L, n2.expireLinkNodeRecid );
@@ -251,7 +256,7 @@ public class HTreeMap2Test
         for( long i = HTreeMapImpl.BUCKET_OVERFLOW - 1; i >= 0; i-- )
         {
             assertTrue( recid != 0 );
-            HTreeMapImpl.LinkedNode n = (HTreeMapImpl.LinkedNode) engine.get( recid, m.LN_SERIALIZER );
+            HTreeLinkedNode n = (HTreeLinkedNode) engine.get( recid, m.LN_SERIALIZER );
             assertEquals( i, n.key );
             assertEquals( i, n.value );
             recid = n.next;
@@ -295,7 +300,7 @@ public class HTreeMap2Test
         for( long i = 0; i <= HTreeMapImpl.BUCKET_OVERFLOW; i++ )
         {
             assertTrue( recid != 0 );
-            HTreeMapImpl.LinkedNode n = (HTreeMapImpl.LinkedNode) engine.get( recid, m.LN_SERIALIZER );
+            HTreeLinkedNode n = (HTreeLinkedNode) engine.get( recid, m.LN_SERIALIZER );
 
             assertNotNull( n );
             assertEquals( i, n.key );
@@ -439,13 +444,13 @@ public class HTreeMap2Test
         assertEquals( ZERO, engine.get( m.expireHeads[ 0 ], SerializerBase.LONG ) );
         assertEquals( ZERO, engine.get( m.expireTails[ 0 ], SerializerBase.LONG ) );
 
-        m.expireLinkAdd( 0, m.engine.put( HTreeMapImpl.ExpireLinkNode.EMPTY, HTreeMapImpl.ExpireLinkNode.SERIALIZER ), 111L, 222 );
+        m.expireLinkAdd( 0, m.engine.put( ExpireLinkNode.EMPTY, ExpireLinkNode.SERIALIZER ), 111L, 222 );
 
         Long recid = engine.get( m.expireHeads[ 0 ], SerializerBase.LONG );
         assertFalse( ZERO.equals( recid ) );
         assertEquals( recid, engine.get( m.expireTails[ 0 ], SerializerBase.LONG ) );
 
-        HTreeMapImpl.ExpireLinkNode n = engine.get( recid, HTreeMapImpl.ExpireLinkNode.SERIALIZER );
+        ExpireLinkNode n = engine.get( recid, ExpireLinkNode.SERIALIZER );
         assertEquals( 0, n.prev );
         assertEquals( 0, n.next );
         assertEquals( 111L, n.keyRecid );
@@ -473,7 +478,7 @@ public class HTreeMap2Test
         long[] recids = new long[ 10 ];
         for( int i = 1; i < 10; i++ )
         {
-            recids[ i ] = m.engine.put( HTreeMapImpl.ExpireLinkNode.EMPTY, HTreeMapImpl.ExpireLinkNode.SERIALIZER );
+            recids[ i ] = m.engine.put( ExpireLinkNode.EMPTY, ExpireLinkNode.SERIALIZER );
             m.expireLinkAdd( 2, recids[ i ], i * 10, i * 100 );
         }
 
@@ -512,7 +517,7 @@ public class HTreeMap2Test
         //System.out.println("--");
         while( recid != 0 )
         {
-            HTreeMapImpl.ExpireLinkNode n = engine.get( recid, HTreeMapImpl.ExpireLinkNode.SERIALIZER );
+            ExpireLinkNode n = engine.get( recid, ExpireLinkNode.SERIALIZER );
             //System.out.println(n.hash);
             assertEquals( prev, n.prev );
             prev = recid;

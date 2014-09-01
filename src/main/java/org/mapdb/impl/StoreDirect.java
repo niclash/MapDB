@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.longmap.LongHashMap;
 
 /**
  * Storage Engine which saves record directly into file.

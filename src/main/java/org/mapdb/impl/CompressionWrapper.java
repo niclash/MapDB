@@ -5,6 +5,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.FastArrayList;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 
 /** wraps another serializer and (de)compresses its output/input*/
 public final class CompressionWrapper<E> implements ValueSerializer<E>, Serializable
@@ -25,7 +27,7 @@ public final class CompressionWrapper<E> implements ValueSerializer<E>, Serializ
     /** used for deserialization */
     public CompressionWrapper( SerializerBase serializerBase,
                                DataInput is,
-                               SerializerBase.FastArrayList<Object> objectStack
+                               FastArrayList<Object> objectStack
     ) throws IOException
     {
         objectStack.add(this);

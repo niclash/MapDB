@@ -1,7 +1,7 @@
 package org.mapdb;
 
 import org.junit.Test;
-import org.mapdb.impl.LongConcurrentLRUMap;
+import org.mapdb.impl.longmap.LongConcurrentLRUMap;
 
 import static org.junit.Assert.assertTrue;
 

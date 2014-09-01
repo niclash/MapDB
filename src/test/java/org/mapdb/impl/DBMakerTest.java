@@ -17,7 +17,10 @@ import org.junit.Test;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Engine;
-import org.mapdb.impl.EngineWrapper.ReadOnlyEngine;
+import org.mapdb.impl.engine.AsyncWriteEngine;
+import org.mapdb.impl.engine.EngineWrapper;
+import org.mapdb.impl.engine.EngineWrapper.ReadOnlyEngine;
+import org.mapdb.impl.engine.TxEngine;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

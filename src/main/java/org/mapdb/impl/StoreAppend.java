@@ -28,6 +28,10 @@ import java.util.TreeSet;
 import java.util.concurrent.locks.Lock;
 import org.mapdb.Engine;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.longmap.LongConcurrentHashMap;
+import org.mapdb.impl.longmap.LongHashMap;
+import org.mapdb.impl.longmap.LongMap;
 
 /**
  * Append only store. Uses different file format than Direct and WAL store

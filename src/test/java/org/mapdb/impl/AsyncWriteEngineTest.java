@@ -10,6 +10,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mapdb.TestFile;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.engine.AsyncWriteEngine;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

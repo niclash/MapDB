@@ -2,7 +2,6 @@ package org.mapdb;
 
 import java.io.File;
 import org.junit.Test;
-import org.mapdb.impl.Atomic;
 import org.mapdb.impl.Fun;
 import org.mapdb.impl.UtilsTest;
 

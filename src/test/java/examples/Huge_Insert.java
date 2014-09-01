@@ -9,8 +9,8 @@ import java.util.Random;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.KeySerializer;
-import org.mapdb.impl.BTreeKeySerializer;
-import org.mapdb.impl.BTreeMapImpl;
+import org.mapdb.impl.binaryserializer.BTreeKeySerializer;
+import org.mapdb.impl.btree.BTreeMapImpl;
 import org.mapdb.impl.Fun;
 import org.mapdb.impl.Pump;
 

@@ -24,6 +24,7 @@ import javax.swing.JLabel;
 import junit.framework.TestCase;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.mapdb.impl.binaryserializer.SerializerPojo;
 
 @SuppressWarnings( { "unchecked", "rawtypes" } )
 public class SerializerPojoTest extends TestCase

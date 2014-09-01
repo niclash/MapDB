@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Set;
 import org.junit.Test;
-import org.mapdb.impl.SerializerBase;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 import org.mapdb.impl.UtilsTest;
 
 import static org.junit.Assert.assertEquals;

@@ -3,7 +3,7 @@ package org.mapdb;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
-import org.mapdb.impl.BTreeKeySerializer;
+import org.mapdb.impl.binaryserializer.BTreeKeySerializer;
 
 public interface BTreeSetMaker
 {

@@ -10,6 +10,7 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.btree.BTreeMapImpl;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;

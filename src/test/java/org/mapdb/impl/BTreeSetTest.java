@@ -2,6 +2,8 @@ package org.mapdb.impl;
 
 import java.util.Collections;
 import org.junit.Before;
+import org.mapdb.impl.binaryserializer.BTreeKeySerializer;
+import org.mapdb.impl.btree.BTreeMapImpl;
 
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class BTreeSetTest extends HTreeSetTest

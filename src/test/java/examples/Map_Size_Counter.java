@@ -5,7 +5,7 @@ import org.mapdb.BTreeMap;
 import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.impl.Atomic;
+import org.mapdb.Atomic;
 
 /**
  * Keep tracks of number of items in map.

@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
-import org.mapdb.impl.BTreeKeySerializer;
-import org.mapdb.impl.BTreeMapImpl;
+import org.mapdb.impl.binaryserializer.BTreeKeySerializer;
+import org.mapdb.impl.btree.BTreeMapImpl;
 import org.mapdb.impl.DataIO;
 import org.mapdb.impl.DataOutput2;
 import org.mapdb.impl.Fun;
-import org.mapdb.impl.SerializerBase;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

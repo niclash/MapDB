@@ -25,6 +25,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.FastArrayList;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 
 /**
  * Functional stuff. Tuples, function, callback methods etc..
@@ -162,7 +164,7 @@ public final class Fun
         /**
          * constructor used for deserialization
          */
-        protected Tuple2( SerializerBase serializer, DataInput in, SerializerBase.FastArrayList<Object> objectStack )
+        protected Tuple2( SerializerBase serializer, DataInput in, FastArrayList<Object> objectStack )
             throws IOException
         {
             objectStack.add( this );
@@ -229,7 +231,7 @@ public final class Fun
          */
         protected Tuple3( SerializerBase serializer,
                           DataInput in,
-                          SerializerBase.FastArrayList<Object> objectStack,
+                          FastArrayList<Object> objectStack,
                           int extra
         )
             throws IOException
@@ -299,7 +301,7 @@ public final class Fun
         /**
          * constructor used for deserialization
          */
-        protected Tuple4( SerializerBase serializer, DataInput in, SerializerBase.FastArrayList<Object> objectStack )
+        protected Tuple4( SerializerBase serializer, DataInput in, FastArrayList<Object> objectStack )
             throws IOException
         {
             objectStack.add( this );
@@ -372,7 +374,7 @@ public final class Fun
         /**
          * constructor used for deserialization
          */
-        protected Tuple5( SerializerBase serializer, DataInput in, SerializerBase.FastArrayList<Object> objectStack )
+        protected Tuple5( SerializerBase serializer, DataInput in, FastArrayList<Object> objectStack )
             throws IOException
         {
             objectStack.add( this );
@@ -449,7 +451,7 @@ public final class Fun
         /**
          * constructor used for deserialization
          */
-        protected Tuple6( SerializerBase serializer, DataInput in, SerializerBase.FastArrayList<Object> objectStack )
+        protected Tuple6( SerializerBase serializer, DataInput in, FastArrayList<Object> objectStack )
             throws IOException
         {
             objectStack.add( this );
@@ -522,7 +524,7 @@ public final class Fun
          */
         protected Tuple2Comparator( SerializerBase serializer,
                                     DataInput in,
-                                    SerializerBase.FastArrayList<Object> objectStack
+                                    FastArrayList<Object> objectStack
         )
             throws IOException
         {
@@ -590,7 +592,7 @@ public final class Fun
          */
         protected Tuple3Comparator( SerializerBase serializer,
                                     DataInput in,
-                                    SerializerBase.FastArrayList<Object> objectStack,
+                                    FastArrayList<Object> objectStack,
                                     int extra
         )
             throws IOException
@@ -666,7 +668,7 @@ public final class Fun
          */
         protected Tuple4Comparator( SerializerBase serializer,
                                     DataInput in,
-                                    SerializerBase.FastArrayList<Object> objectStack
+                                    FastArrayList<Object> objectStack
         )
             throws IOException
         {
@@ -750,7 +752,7 @@ public final class Fun
          */
         protected Tuple5Comparator( SerializerBase serializer,
                                     DataInput in,
-                                    SerializerBase.FastArrayList<Object> objectStack
+                                    FastArrayList<Object> objectStack
         )
             throws IOException
         {
@@ -849,7 +851,7 @@ public final class Fun
          */
         protected Tuple6Comparator( SerializerBase serializer,
                                     DataInput in,
-                                    SerializerBase.FastArrayList<Object> objectStack
+                                    FastArrayList<Object> objectStack
         )
             throws IOException
         {
@@ -1165,7 +1167,7 @@ public final class Fun
          */
         protected ArrayComparator( SerializerBase serializer,
                                    DataInput in,
-                                   SerializerBase.FastArrayList<Object> objectStack
+                                   FastArrayList<Object> objectStack
         )
             throws IOException
         {

@@ -49,10 +49,14 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import org.junit.Test;
+import org.mapdb.Atomic;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.Hasher;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.BTreeKeySerializer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.engine.DbImpl;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

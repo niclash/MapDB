@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
-import org.mapdb.impl.DbImpl;
-import org.mapdb.impl.SerializerBase;
+import org.mapdb.impl.engine.DbImpl;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 import org.mapdb.impl.StoreHeap;
 
 import static org.junit.Assert.assertEquals;

@@ -6,7 +6,6 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.BlockingQueue;
-import org.mapdb.impl.Atomic;
 import org.mapdb.impl.Fun;
 
 public interface DB extends Closeable

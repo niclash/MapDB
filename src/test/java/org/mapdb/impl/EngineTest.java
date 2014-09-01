@@ -7,10 +7,11 @@ import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
 import org.mapdb.Engine;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.mapdb.impl.SerializerBase.BYTE_ARRAY_NOSIZE;
+import static org.mapdb.impl.binaryserializer.SerializerBase.BYTE_ARRAY_NOSIZE;
 
 /**
  * Tests contract of various implementations of Engine interface

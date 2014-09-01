@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.NavigableSet;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.impl.BTreeKeySerializer;
+import org.mapdb.impl.binaryserializer.BTreeKeySerializer;
 import org.mapdb.impl.Fun;
 
 /**

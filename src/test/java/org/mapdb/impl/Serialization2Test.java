@@ -12,6 +12,7 @@ import org.mapdb.Serialization2Bean;
 import org.mapdb.Serialized2DerivedBean;
 import org.mapdb.TestFile;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.SerializerPojo;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

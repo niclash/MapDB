@@ -17,7 +17,7 @@
 package org.mapdb;
 
 import java.io.Closeable;
-import org.mapdb.impl.SerializerPojo;
+import org.mapdb.impl.binaryserializer.SerializerPojo;
 
 /**
  * Centerpiece for record management, `Engine` is simple key value store.
@@ -35,7 +35,7 @@ import org.mapdb.impl.SerializerPojo;
  * be placed into queue and asynchronously written on background thread.
  *
  * There is {@link org.mapdb.impl.Store} subinterface for raw persistence
- * Most of MapDB features comes from {@link org.mapdb.impl.EngineWrapper}s, which are stacked on
+ * Most of MapDB features comes from {@link org.mapdb.impl.engine.EngineWrapper}s, which are stacked on
  * top of each other to provide asynchronous writes, instance cache, encryption etc..
  * `Engine` stack is very elegant and uniform way to handle additional functionality.
  * Other DBs need an ORM framework to achieve similar features.
@@ -210,7 +210,7 @@ public interface Engine  extends Closeable {
     /**
      * Returns read-only snapshot of data in Engine.
      *
-     * @see org.mapdb.impl.EngineWrapper#canSnapshot()
+     * @see org.mapdb.impl.engine.EngineWrapper#canSnapshot()
      * @throws UnsupportedOperationException if snapshots are not supported/enabled
      */
     Engine snapshot() throws UnsupportedOperationException;

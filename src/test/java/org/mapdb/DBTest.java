@@ -4,9 +4,8 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
-import org.mapdb.impl.Atomic;
 import org.mapdb.impl.CC;
-import org.mapdb.impl.DbImpl;
+import org.mapdb.impl.engine.DbImpl;
 import org.mapdb.impl.StoreDirect;
 import org.mapdb.impl.Volume;
 

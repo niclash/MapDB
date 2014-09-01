@@ -19,8 +19,8 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.TreeMap;
 import junit.framework.TestCase;
-import org.mapdb.impl.LongHashMap;
-import org.mapdb.impl.LongMap;
+import org.mapdb.impl.longmap.LongHashMap;
+import org.mapdb.impl.longmap.LongMap;
 
 public class LongHashMapTest extends TestCase
 {

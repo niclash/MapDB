@@ -3,7 +3,7 @@ package examples;
 import java.util.Map;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.impl.Atomic;
+import org.mapdb.Atomic;
 
 /**
  * Demonstrates Atomic.Long usage as unique-key generator.

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 import org.mapdb.Engine;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.engine.EngineWrapper;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

@@ -33,6 +33,10 @@ import java.util.zip.CRC32;
 import org.mapdb.DB;
 import org.mapdb.Engine;
 import org.mapdb.ValueSerializer;
+import org.mapdb.impl.binaryserializer.SerializerBase;
+import org.mapdb.impl.binaryserializer.SerializerPojo;
+import org.mapdb.impl.engine.EngineWrapper;
+import org.mapdb.impl.engine.TxEngine;
 
 /**
  * Low level record store.
@@ -337,12 +341,12 @@ public abstract class Store implements Engine
     }
 
 
-    /** traverses {@link org.mapdb.impl.EngineWrapper}s and returns underlying {@link Store}*/
+    /** traverses {@link org.mapdb.impl.engine.EngineWrapper}s and returns underlying {@link Store}*/
     public static Store forDB(DB db){
         return forEngine(db.getEngine());
     }
 
-    /** traverses {@link org.mapdb.impl.EngineWrapper}s and returns underlying {@link Store}*/
+    /** traverses {@link org.mapdb.impl.engine.EngineWrapper}s and returns underlying {@link Store}*/
     public static Store forEngine(Engine e){
         if(e instanceof EngineWrapper )
             return forEngine(((EngineWrapper) e).getWrappedEngine());
@@ -359,7 +363,7 @@ public abstract class Store implements Engine
 
     private static final int LOCK_MASK = CC.CONCURRENCY-1;
 
-    protected static int lockPos(final long key) {
+    public static int lockPos( final long key ) {
         int h = (int)(key ^ (key >>> 32));
         h ^= (h >>> 20) ^ (h >>> 12);
         h ^= (h >>> 7) ^ (h >>> 4);

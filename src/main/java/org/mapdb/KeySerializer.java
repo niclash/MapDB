@@ -45,12 +45,13 @@ public interface KeySerializer<A>
      *
      * @param in to read serialized data from
      * @param start the first key to be read and returned.
-     * @param end the first key to be read and returned.
+     * @param end the last key to be read and returned.
+     * @param size number of keys to deserialize.
      * @return deserialized array of keys.
      *
      * @throws java.io.IOException
      */
-    Object[] deserialize( DataInput in, int start, int end, int size )
+    A[] deserialize( DataInput in, int start, int end, int size )
         throws IOException;
 
     /**

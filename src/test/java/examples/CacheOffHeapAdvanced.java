@@ -5,7 +5,7 @@ import java.util.Random;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
-import org.mapdb.impl.SerializerBase;
+import org.mapdb.impl.binaryserializer.SerializerBase;
 import org.mapdb.impl.Store;
 
 /**

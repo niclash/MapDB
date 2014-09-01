@@ -23,6 +23,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
+import org.mapdb.impl.binaryserializer.SerializerPojo;
 
 /**
  * MapDB abstraction over raw storage (file, disk partition, memory etc...).
