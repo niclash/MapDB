@@ -12,7 +12,7 @@ public class Issue265Test
     public void compact()
         throws IOException
     {
-        DBFactory dbMaker = DBMaker.newMemoryDB()
+        DBBuilder dbMaker = DBMaker.newMemoryDB()
             .transactionDisable() // breaks functionality even in version 0.9.7
             .cacheDisable();
         DB db = dbMaker.make();
@@ -36,7 +36,7 @@ public class Issue265Test
     public void compact_no_tx()
         throws IOException
     {
-        DBFactory dbMaker = DBMaker.newMemoryDB()
+        DBBuilder dbMaker = DBMaker.newMemoryDB()
             .cacheDisable();
         DB db = dbMaker.make();
         try

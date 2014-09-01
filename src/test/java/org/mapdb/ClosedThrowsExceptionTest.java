@@ -117,14 +117,14 @@ public abstract class ClosedThrowsExceptionTest
         m.remove( "aa" );
     }
 
-    @Test(expected = IllegalAccessError.class)
+    @Test
     public void closed_close()
         throws IOException
     {
         Map m = db.getHashMap( "test" );
         m.put( "aa", "bb" );
         db.close();
-        db.close();
+        db.close(); // Multiple close() should succeed!
     }
 
     @Test(expected = IllegalAccessError.class)

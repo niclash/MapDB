@@ -27,7 +27,7 @@ public class Issue77Test
         // This works:
         // DBMaker maker = DBMaker.newFileDB(new File(dir + "/test"));
         // This is faster, but fails if read() is called for the second time:
-        DBFactory maker = DBMaker.newAppendFileDB( new File( dir + "/test" ) );
+        DBBuilder maker = DBMaker.newAppendFileDB( new File( dir + "/test" ) );
         if( readOnly )
         {
             maker.readOnly();

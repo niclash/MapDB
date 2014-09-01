@@ -306,7 +306,7 @@ public final class Pump {
      * There are technical reason for this requirement.
      * To sort unordered data use {@link Pump#sort(java.util.Iterator, boolean, int, java.util.Comparator, ValueSerializer)}
      *
-     * This method does not call commit. You should disable Write Ahead Log when this method is used {@link DBMakerImpl#transactionDisable()}
+     * This method does not call commit. You should disable Write Ahead Log when this method is used {@link DbBuilderImpl#transactionDisable()}
      *
      *
      * @param source iterator over source data, must be reverse sorted

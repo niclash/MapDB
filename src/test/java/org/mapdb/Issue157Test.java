@@ -2,7 +2,7 @@ package org.mapdb;
 
 import java.util.Map;
 import org.junit.Test;
-import org.mapdb.impl.DBMakerImpl;
+import org.mapdb.impl.DbBuilderImpl;
 
 import static org.junit.Assert.assertTrue;
 
@@ -13,7 +13,7 @@ public class Issue157Test
     public void concurrent_BTreeMap()
         throws InterruptedException
     {
-        DBMakerImpl dbMaker = (DBMakerImpl) DBMaker.newMemoryDB().cacheDisable();
+        DbBuilderImpl dbMaker = (DbBuilderImpl) DBMaker.newMemoryDB().cacheDisable();
         DB db = dbMaker.make();
         final BTreeMap<Integer, String> map = db.getTreeMap( "COL_2" );
         map.clear();

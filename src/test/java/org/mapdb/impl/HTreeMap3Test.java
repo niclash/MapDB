@@ -36,6 +36,14 @@ public class HTreeMap3Test extends ConcurrentMapInterfaceTest<Integer, String>
     }
 
     @Override
+    public void tearDown()
+        throws Exception
+    {
+        super.tearDown();
+        r.close();
+    }
+
+    @Override
     protected Integer getKeyNotInPopulatedMap()
         throws UnsupportedOperationException
     {

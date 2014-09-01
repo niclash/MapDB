@@ -59,9 +59,6 @@ public abstract class Store implements Engine
 
     /** default serializer used for persistence. Handles POJO and other stuff which requires write-able access to Engine */
     protected SerializerPojo serializerPojo;
-
-
-
     protected final ThreadLocal<CompressLZF> LZF;
 
     protected Store(boolean checksum, boolean compress, byte[] password, boolean disableLocks) {

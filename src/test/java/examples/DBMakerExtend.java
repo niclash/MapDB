@@ -7,7 +7,7 @@ import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.Engine;
 import org.mapdb.ValueSerializer;
-import org.mapdb.impl.DBMakerImpl;
+import org.mapdb.impl.DbBuilderImpl;
 import org.mapdb.impl.EngineWrapper;
 
 /**
@@ -22,7 +22,7 @@ public class DBMakerExtend
 
     //this class extends `DBMaker` and add our own options
     //generics are used so each option returns `ExtendedDBMaker` instead of old `DBMaker`
-    static class ExtendedDBMaker extends DBMakerImpl
+    static class ExtendedDBMaker extends DbBuilderImpl
     {
 
         //override one of protected extension methods

@@ -16,8 +16,6 @@
 
 package org.mapdb.impl;
 
-import org.mapdb.impl.DBMakerImpl;
-
 /**
  * Compiler Configuration. There are some static final boolean fields, which describe features MapDB was compiled with.
  * <p/>
@@ -90,7 +88,7 @@ public interface CC {
 
     int DEFAULT_CACHE_SIZE = 1024 * 32;
 
-    String DEFAULT_CACHE = DBMakerImpl.Keys.cache_hashTable;
+    String DEFAULT_CACHE = DbBuilderImpl.Keys.cache_hashTable;
 
     int DEFAULT_FREE_SPACE_RECLAIM_Q = 5;
 

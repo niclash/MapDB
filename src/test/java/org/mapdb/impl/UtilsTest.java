@@ -123,7 +123,7 @@ public class UtilsTest
     public void testHexaConversion()
     {
         byte[] b = new byte[]{ 11, 112, 11, 0, 39, 90 };
-        assertArrayEquals( b, DBMakerImpl.fromHexa( DBMakerImpl.toHexa( b ) ) );
+        assertArrayEquals( b, DbBuilderImpl.fromHexa( DbBuilderImpl.toHexa( b ) ) );
     }
 
     /**

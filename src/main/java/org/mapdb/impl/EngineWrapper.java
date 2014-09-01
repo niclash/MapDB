@@ -16,7 +16,6 @@
 
 package org.mapdb.impl;
 
-
 import java.io.IOError;
 import java.io.IOException;
 import java.util.Arrays;
@@ -34,529 +33,668 @@ import org.mapdb.ValueSerializer;
 public class EngineWrapper implements Engine
 {
 
-    protected static final Logger LOG = !CC.LOG_EWRAP?null :
-            Logger.getLogger(EngineWrapper.class.getName());
-
-
+    protected static final Logger LOG = !CC.LOG_EWRAP ? null :
+                                        Logger.getLogger( EngineWrapper.class.getName() );
 
     private Engine engine;
 
-    public EngineWrapper(Engine engine){
-        if(engine == null) throw new IllegalArgumentException();
+    public EngineWrapper( Engine engine )
+    {
+        if( engine == null )
+        {
+            throw new IllegalArgumentException();
+        }
         this.engine = engine;
     }
 
     @Override
-    public long preallocate(){
+    public long preallocate()
+    {
         return getWrappedEngine().preallocate();
     }
 
     @Override
-    public void preallocate(long[] recids){
-        getWrappedEngine().preallocate(recids);
+    public void preallocate( long[] recids )
+    {
+        getWrappedEngine().preallocate( recids );
     }
 
     @Override
-    public <A> long put(A value, ValueSerializer<A> serializer) {
-        return getWrappedEngine().put(value, serializer);
+    public <A> long put( A value, ValueSerializer<A> serializer )
+    {
+        return getWrappedEngine().put( value, serializer );
     }
 
     @Override
-    public <A> A get(long recid, ValueSerializer<A> serializer) {
-        return getWrappedEngine().get(recid, serializer);
+    public <A> A get( long recid, ValueSerializer<A> serializer )
+    {
+        return getWrappedEngine().get( recid, serializer );
     }
 
     @Override
-    public <A> void update(long recid, A value, ValueSerializer<A> serializer) {
-        getWrappedEngine().update(recid, value, serializer);
+    public <A> void update( long recid, A value, ValueSerializer<A> serializer )
+    {
+        getWrappedEngine().update( recid, value, serializer );
     }
 
     @Override
-    public <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer) {
-        return getWrappedEngine().compareAndSwap(recid, expectedOldValue, newValue, serializer);
+    public <A> boolean compareAndSwap( long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer )
+    {
+        return getWrappedEngine().compareAndSwap( recid, expectedOldValue, newValue, serializer );
     }
 
     @Override
-    public <A> void delete(long recid, ValueSerializer<A> serializer) {
-        getWrappedEngine().delete(recid, serializer);
+    public <A> void delete( long recid, ValueSerializer<A> serializer )
+    {
+        getWrappedEngine().delete( recid, serializer );
     }
 
     @Override
-    public void close() {
+    public void close()
+    {
         Engine e = engine;
-        try{
-            if(e!=null)
+        try
+        {
+            if( e != null )
+            {
                 e.close();
-        } finally {
+            }
+        }
+        finally
+        {
             engine = CLOSED;
         }
     }
 
     @Override
-    public boolean isClosed() {
-        return engine==CLOSED || engine==null;
+    public boolean isClosed()
+    {
+        return engine == CLOSED || engine == null;
     }
 
     @Override
-    public void commit() {
+    public void commit()
+    {
         getWrappedEngine().commit();
     }
 
     @Override
-    public void rollback() {
+    public void rollback()
+    {
         getWrappedEngine().rollback();
     }
 
-
     @Override
-    public boolean isReadOnly() {
+    public boolean isReadOnly()
+    {
         return getWrappedEngine().isReadOnly();
     }
 
     @Override
-    public boolean canRollback() {
+    public boolean canRollback()
+    {
         return getWrappedEngine().canRollback();
     }
 
     @Override
-    public boolean canSnapshot() {
+    public boolean canSnapshot()
+    {
         return getWrappedEngine().canSnapshot();
     }
 
     @Override
-    public Engine snapshot() throws UnsupportedOperationException {
+    public Engine snapshot()
+        throws UnsupportedOperationException
+    {
         return getWrappedEngine().snapshot();
     }
 
     @Override
-    public void clearCache() {
+    public void clearCache()
+    {
         getWrappedEngine().clearCache();
     }
 
     @Override
-    public void compact() {
+    public void compact()
+    {
         getWrappedEngine().compact();
     }
 
     @Override
-    public SerializerPojo getSerializerPojo() {
+    public SerializerPojo getSerializerPojo()
+    {
         return getWrappedEngine().getSerializerPojo();
     }
 
     @Override
-    public void closeListenerRegister(Runnable closeListener) {
-        getWrappedEngine().closeListenerRegister(closeListener);
-
+    public void closeListenerRegister( Runnable closeListener )
+    {
+        getWrappedEngine().closeListenerRegister( closeListener );
     }
 
     @Override
-    public void closeListenerUnregister(Runnable closeListener) {
-        getWrappedEngine().closeListenerUnregister(closeListener);
-
+    public void closeListenerUnregister( Runnable closeListener )
+    {
+        getWrappedEngine().closeListenerUnregister( closeListener );
     }
 
-    public Engine getWrappedEngine(){
-        return checkClosed(engine);
+    public Engine getWrappedEngine()
+    {
+        return checkClosed( engine );
     }
 
-    protected static <V> V checkClosed(V v){
-        if(v==null) throw new IllegalAccessError("DB has been closed");
+    protected static <V> V checkClosed( V v )
+    {
+        if( v == null )
+        {
+            throw new IllegalAccessError( "DB has been closed" );
+        }
         return v;
     }
-
 
     /**
      * Wraps an <code>Engine</code> and throws
      * <code>UnsupportedOperationException("Read-only")</code>
      * on any modification attempt.
      */
-    public static class ReadOnlyEngine extends EngineWrapper {
+    public static class ReadOnlyEngine extends EngineWrapper
+    {
 
-
-        public ReadOnlyEngine(Engine engine){
-            super(engine);
-        }
-
-
-        @Override
-        public long preallocate() {
-            throw new UnsupportedOperationException("Read-only");
+        public ReadOnlyEngine( Engine engine )
+        {
+            super( engine );
         }
 
         @Override
-        public void preallocate(long[] recids){
-            throw new UnsupportedOperationException("Read-only");
-        }
-
-
-        @Override
-        public <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer) {
-            throw new UnsupportedOperationException("Read-only");
+        public long preallocate()
+        {
+            throw new UnsupportedOperationException( "Read-only" );
         }
 
         @Override
-        public <A> long put(A value, ValueSerializer<A> serializer) {
-            throw new UnsupportedOperationException("Read-only");
+        public void preallocate( long[] recids )
+        {
+            throw new UnsupportedOperationException( "Read-only" );
         }
 
         @Override
-        public <A> void update(long recid, A value, ValueSerializer<A> serializer) {
-            throw new UnsupportedOperationException("Read-only");
+        public <A> boolean compareAndSwap( long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer )
+        {
+            throw new UnsupportedOperationException( "Read-only" );
         }
 
         @Override
-        public <A> void delete(long recid, ValueSerializer<A> serializer){
-            throw new UnsupportedOperationException("Read-only");
+        public <A> long put( A value, ValueSerializer<A> serializer )
+        {
+            throw new UnsupportedOperationException( "Read-only" );
         }
 
         @Override
-        public void commit() {
-            throw new UnsupportedOperationException("Read-only");
+        public <A> void update( long recid, A value, ValueSerializer<A> serializer )
+        {
+            throw new UnsupportedOperationException( "Read-only" );
         }
 
         @Override
-        public void rollback() {
-            throw new UnsupportedOperationException("Read-only");
+        public <A> void delete( long recid, ValueSerializer<A> serializer )
+        {
+            throw new UnsupportedOperationException( "Read-only" );
         }
 
+        @Override
+        public void commit()
+        {
+            throw new UnsupportedOperationException( "Read-only" );
+        }
 
         @Override
-        public boolean isReadOnly() {
+        public void rollback()
+        {
+            throw new UnsupportedOperationException( "Read-only" );
+        }
+
+        @Override
+        public boolean isReadOnly()
+        {
             return true;
         }
 
         @Override
-        public boolean canSnapshot() {
+        public boolean canSnapshot()
+        {
             return true;
         }
 
         @Override
-        public Engine snapshot() throws UnsupportedOperationException {
+        public Engine snapshot()
+            throws UnsupportedOperationException
+        {
             return this;
         }
-
     }
-
 
     /**
      * check if Record Instances were not modified while in cache.
      * Usuful to diagnose strange problems with Instance Cache.
      */
-    public static class ImmutabilityCheckEngine extends EngineWrapper{
+    public static class ImmutabilityCheckEngine extends EngineWrapper
+    {
 
-        protected static class Item {
+        protected static class Item
+        {
             final ValueSerializer serializer;
             final Object item;
             final int oldChecksum;
 
-            public Item(ValueSerializer serializer, Object item) {
-                if(item==null || serializer==null) throw new AssertionError("null");
+            public Item( ValueSerializer serializer, Object item )
+            {
+                if( item == null || serializer == null )
+                {
+                    throw new AssertionError( "null" );
+                }
                 this.serializer = serializer;
                 this.item = item;
                 oldChecksum = checksum();
-                if(oldChecksum!=checksum()) throw new AssertionError("inconsistent serialization");
-            }
-
-            private int checksum(){
-                try {
-                    DataOutput2 out = new DataOutput2();
-                    serializer.serialize(out, item);
-                    byte[] bb = out.copyBytes();
-                    return Arrays.hashCode(bb);
-                }catch(IOException e){
-                    throw new IOError(e);
+                if( oldChecksum != checksum() )
+                {
+                    throw new AssertionError( "inconsistent serialization" );
                 }
             }
 
-            void check(){
+            private int checksum()
+            {
+                try
+                {
+                    DataOutput2 out = new DataOutput2();
+                    serializer.serialize( out, item );
+                    byte[] bb = out.copyBytes();
+                    return Arrays.hashCode( bb );
+                }
+                catch( IOException e )
+                {
+                    throw new IOError( e );
+                }
+            }
+
+            void check()
+            {
                 int newChecksum = checksum();
-                if(oldChecksum!=newChecksum) throw new AssertionError("Record instance was modified: \n  "+item+"\n  "+serializer);
+                if( oldChecksum != newChecksum )
+                {
+                    throw new AssertionError( "Record instance was modified: \n  " + item + "\n  " + serializer );
+                }
             }
         }
 
         protected LongConcurrentHashMap<Item> items = new LongConcurrentHashMap<Item>();
 
-        protected ImmutabilityCheckEngine(Engine engine) {
-            super(engine);
+        protected ImmutabilityCheckEngine( Engine engine )
+        {
+            super( engine );
         }
 
         @Override
-        public <A> A get(long recid, ValueSerializer<A> serializer) {
-            Item item = items.get(recid);
-            if(item!=null) item.check();
-            A ret = super.get(recid, serializer);
-            if(ret!=null) items.put(recid, new Item(serializer,ret));
+        public <A> A get( long recid, ValueSerializer<A> serializer )
+        {
+            Item item = items.get( recid );
+            if( item != null )
+            {
+                item.check();
+            }
+            A ret = super.get( recid, serializer );
+            if( ret != null )
+            {
+                items.put( recid, new Item( serializer, ret ) );
+            }
             return ret;
         }
 
         @Override
-        public <A> long put(A value, ValueSerializer<A> serializer) {
-            long ret =  super.put(value, serializer);
-            if(value!=null) items.put(ret, new Item(serializer,value));
+        public <A> long put( A value, ValueSerializer<A> serializer )
+        {
+            long ret = super.put( value, serializer );
+            if( value != null )
+            {
+                items.put( ret, new Item( serializer, value ) );
+            }
             return ret;
         }
 
         @Override
-        public <A> void update(long recid, A value, ValueSerializer<A> serializer) {
-            Item item = items.get(recid);
-            if(item!=null) item.check();
-            super.update(recid, value, serializer);
-            if(value!=null) items.put(recid, new Item(serializer,value));
+        public <A> void update( long recid, A value, ValueSerializer<A> serializer )
+        {
+            Item item = items.get( recid );
+            if( item != null )
+            {
+                item.check();
+            }
+            super.update( recid, value, serializer );
+            if( value != null )
+            {
+                items.put( recid, new Item( serializer, value ) );
+            }
         }
 
         @Override
-        public <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer) {
-            Item item = items.get(recid);
-            if(item!=null) item.check();
-            boolean ret = super.compareAndSwap(recid, expectedOldValue, newValue, serializer);
-            if(ret && newValue!=null) items.put(recid, new Item(serializer,item));
+        public <A> boolean compareAndSwap( long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer )
+        {
+            Item item = items.get( recid );
+            if( item != null )
+            {
+                item.check();
+            }
+            boolean ret = super.compareAndSwap( recid, expectedOldValue, newValue, serializer );
+            if( ret && newValue != null )
+            {
+                items.put( recid, new Item( serializer, item ) );
+            }
             return ret;
         }
 
         @Override
-        public void close() {
+        public void close()
+        {
             super.close();
-            for(Iterator<Item> iter = items.valuesIterator(); iter.hasNext();){
+            for( Iterator<Item> iter = items.valuesIterator(); iter.hasNext(); )
+            {
                 iter.next().check();
             }
             items.clear();
         }
     }
-    
-    
-    /** Engine wrapper with all methods synchronized on global lock, useful to diagnose concurrency issues.*/ 
-    public static class SynchronizedEngineWrapper extends EngineWrapper{
 
-        protected SynchronizedEngineWrapper(Engine engine) {
-            super(engine);
+    /**
+     * Engine wrapper with all methods synchronized on global lock, useful to diagnose concurrency issues.
+     */
+    public static class SynchronizedEngineWrapper extends EngineWrapper
+    {
+
+        protected SynchronizedEngineWrapper( Engine engine )
+        {
+            super( engine );
         }
 
         @Override
-        synchronized public long preallocate(){
+        synchronized public long preallocate()
+        {
             return super.preallocate();
         }
 
         @Override
-        synchronized public void preallocate(long[] recids){
-            super.preallocate(recids);
-        }
-
-
-        @Override
-        synchronized public <A> long put(A value, ValueSerializer<A> serializer) {
-            return super.put(value, serializer);
+        synchronized public void preallocate( long[] recids )
+        {
+            super.preallocate( recids );
         }
 
         @Override
-        synchronized public <A> A get(long recid, ValueSerializer<A> serializer) {
-            return super.get(recid, serializer);
+        synchronized public <A> long put( A value, ValueSerializer<A> serializer )
+        {
+            return super.put( value, serializer );
         }
 
         @Override
-        synchronized public <A> void update(long recid, A value, ValueSerializer<A> serializer) {
-            super.update(recid, value, serializer);
+        synchronized public <A> A get( long recid, ValueSerializer<A> serializer )
+        {
+            return super.get( recid, serializer );
         }
 
         @Override
-        synchronized public <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer) {
-            return super.compareAndSwap(recid, expectedOldValue, newValue, serializer);
+        synchronized public <A> void update( long recid, A value, ValueSerializer<A> serializer )
+        {
+            super.update( recid, value, serializer );
         }
 
         @Override
-        synchronized public <A> void delete(long recid, ValueSerializer<A> serializer) {
-            super.delete(recid, serializer);
+        synchronized public <A> boolean compareAndSwap( long recid,
+                                                        A expectedOldValue,
+                                                        A newValue,
+                                                        ValueSerializer<A> serializer
+        )
+        {
+            return super.compareAndSwap( recid, expectedOldValue, newValue, serializer );
         }
 
         @Override
-        synchronized public void close() {
+        synchronized public <A> void delete( long recid, ValueSerializer<A> serializer )
+        {
+            super.delete( recid, serializer );
+        }
+
+        @Override
+        synchronized public void close()
+        {
             super.close();
         }
 
         @Override
-        synchronized public boolean isClosed() {
+        synchronized public boolean isClosed()
+        {
             return super.isClosed();
         }
 
         @Override
-        synchronized public void commit() {
+        synchronized public void commit()
+        {
             super.commit();
         }
 
         @Override
-        synchronized public void rollback() {
+        synchronized public void rollback()
+        {
             super.rollback();
         }
 
         @Override
-        synchronized public boolean isReadOnly() {
+        synchronized public boolean isReadOnly()
+        {
             return super.isReadOnly();
         }
 
         @Override
-        synchronized public boolean canSnapshot() {
+        synchronized public boolean canSnapshot()
+        {
             return super.canSnapshot();
         }
 
         @Override
-        synchronized public Engine snapshot() throws UnsupportedOperationException {
+        synchronized public Engine snapshot()
+            throws UnsupportedOperationException
+        {
             return super.snapshot();
         }
 
         @Override
-        synchronized public void compact() {
+        synchronized public void compact()
+        {
             super.compact();
         }
     }
 
-
-    /** Checks that Serializer used to serialize item is the same as Serializer used to deserialize it*/
-    public static class SerializerCheckEngineWrapper extends EngineWrapper{
+    /**
+     * Checks that Serializer used to serialize item is the same as Serializer used to deserialize it
+     */
+    public static class SerializerCheckEngineWrapper extends EngineWrapper
+    {
 
         protected LongMap<ValueSerializer> recid2serializer = new LongConcurrentHashMap<ValueSerializer>();
 
-        protected SerializerCheckEngineWrapper(Engine engine) {
-            super(engine);
+        protected SerializerCheckEngineWrapper( Engine engine )
+        {
+            super( engine );
         }
 
-
-        synchronized protected <A> void checkSerializer(long recid, ValueSerializer<A> serializer) {
-            ValueSerializer other = recid2serializer.get(recid);
-            if(other!=null){
-                if( other!=serializer && other.getClass()!=serializer.getClass())
-                    throw new IllegalArgumentException("Serializer does not match. \n found: "+serializer+" \n expected: "+other);
-            }else
-                recid2serializer.put(recid,serializer);
-        }
-
-        @Override
-        public <A> A get(long recid, ValueSerializer<A> serializer) {
-            checkSerializer(recid, serializer);
-            return super.get(recid, serializer);
-        }
-
-
-        @Override
-        public <A> void update(long recid, A value, ValueSerializer<A> serializer) {
-            checkSerializer(recid, serializer);
-            super.update(recid, value, serializer);
+        synchronized protected <A> void checkSerializer( long recid, ValueSerializer<A> serializer )
+        {
+            ValueSerializer other = recid2serializer.get( recid );
+            if( other != null )
+            {
+                if( other != serializer && other.getClass() != serializer.getClass() )
+                {
+                    throw new IllegalArgumentException( "Serializer does not match. \n found: " + serializer + " \n expected: " + other );
+                }
+            }
+            else
+            {
+                recid2serializer.put( recid, serializer );
+            }
         }
 
         @Override
-        public <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer) {
-            checkSerializer(recid, serializer);
-            return super.compareAndSwap(recid, expectedOldValue, newValue, serializer);
+        public <A> A get( long recid, ValueSerializer<A> serializer )
+        {
+            checkSerializer( recid, serializer );
+            return super.get( recid, serializer );
         }
 
         @Override
-        public <A> void delete(long recid, ValueSerializer<A> serializer) {
-            checkSerializer(recid, serializer);
-            recid2serializer.remove(recid);
-            super.delete(recid, serializer);
+        public <A> void update( long recid, A value, ValueSerializer<A> serializer )
+        {
+            checkSerializer( recid, serializer );
+            super.update( recid, value, serializer );
+        }
+
+        @Override
+        public <A> boolean compareAndSwap( long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer )
+        {
+            checkSerializer( recid, serializer );
+            return super.compareAndSwap( recid, expectedOldValue, newValue, serializer );
+        }
+
+        @Override
+        public <A> void delete( long recid, ValueSerializer<A> serializer )
+        {
+            checkSerializer( recid, serializer );
+            recid2serializer.remove( recid );
+            super.delete( recid, serializer );
         }
     }
 
-
-    /** throws `IllegalArgumentError("already closed)` on all access */
-    public static final Engine CLOSED = new Engine(){
-
+    /**
+     * throws `IllegalArgumentError("already closed)` on all access
+     */
+    public static final Engine CLOSED = new Engine()
+    {
 
         @Override
-        public long preallocate() {
-            throw new IllegalAccessError("already closed");
+        public long preallocate()
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public void preallocate(long[] recids) {
-            throw new IllegalAccessError("already closed");
+        public void preallocate( long[] recids )
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public <A> long put(A value, ValueSerializer<A> serializer) {
-            throw new IllegalAccessError("already closed");
+        public <A> long put( A value, ValueSerializer<A> serializer )
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public <A> A get(long recid, ValueSerializer<A> serializer) {
-            throw new IllegalAccessError("already closed");
+        public <A> A get( long recid, ValueSerializer<A> serializer )
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public <A> void update(long recid, A value, ValueSerializer<A> serializer) {
-            throw new IllegalAccessError("already closed");
+        public <A> void update( long recid, A value, ValueSerializer<A> serializer )
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer) {
-            throw new IllegalAccessError("already closed");
+        public <A> boolean compareAndSwap( long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer )
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public <A> void delete(long recid, ValueSerializer<A> serializer) {
-            throw new IllegalAccessError("already closed");
+        public <A> void delete( long recid, ValueSerializer<A> serializer )
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public void close() {
-            throw new IllegalAccessError("already closed");
+        public void close()
+        {
+//            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public boolean isClosed() {
+        public boolean isClosed()
+        {
             return true;
         }
 
         @Override
-        public void commit() {
-            throw new IllegalAccessError("already closed");
+        public void commit()
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public void rollback() throws UnsupportedOperationException {
-            throw new IllegalAccessError("already closed");
+        public void rollback()
+            throws UnsupportedOperationException
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public boolean isReadOnly() {
-            throw new IllegalAccessError("already closed");
+        public boolean isReadOnly()
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public boolean canRollback() {
-            throw new IllegalAccessError("already closed");
+        public boolean canRollback()
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public boolean canSnapshot() {
-            throw new IllegalAccessError("already closed");
+        public boolean canSnapshot()
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public Engine snapshot() throws UnsupportedOperationException {
-            throw new IllegalAccessError("already closed");
+        public Engine snapshot()
+            throws UnsupportedOperationException
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public void clearCache() {
-            throw new IllegalAccessError("already closed");
+        public void clearCache()
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public void compact() {
-            throw new IllegalAccessError("already closed");
+        public void compact()
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public SerializerPojo getSerializerPojo() {
-            throw new IllegalAccessError("already closed");
+        public SerializerPojo getSerializerPojo()
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public void closeListenerRegister(Runnable closeListener) {
-            throw new IllegalAccessError("already closed");
+        public void closeListenerRegister( Runnable closeListener )
+        {
+            throw new IllegalAccessError( "already closed" );
         }
 
         @Override
-        public void closeListenerUnregister(Runnable closeListener) {
+        public void closeListenerUnregister( Runnable closeListener )
+        {
             //this should be probably empty
         }
     };
@@ -565,35 +703,42 @@ public class EngineWrapper implements Engine
      * Closes Engine on JVM shutdown using shutdown hook: {@link Runtime#addShutdownHook(Thread)}
      * If engine was closed by user before JVM shutdown, hook is removed to save memory.
      */
-    public static class CloseOnJVMShutdown extends EngineWrapper{
+    public static class CloseOnJVMShutdown extends EngineWrapper
+    {
 
-        final protected AtomicBoolean shutdownHappened = new AtomicBoolean(false);
+        final protected AtomicBoolean shutdownHappened = new AtomicBoolean( false );
 
-        final Runnable hookRunnable = new Runnable() {
+        final Runnable hookRunnable = new Runnable()
+        {
             @Override
-            public void run() {
-                shutdownHappened.set(true);
+            public void run()
+            {
+                shutdownHappened.set( true );
                 CloseOnJVMShutdown.this.hook = null;
-                if(CloseOnJVMShutdown.this.isClosed())
+                if( CloseOnJVMShutdown.this.isClosed() )
+                {
                     return;
+                }
                 CloseOnJVMShutdown.this.close();
             }
         };
 
         Thread hook;
 
-
-        public CloseOnJVMShutdown(Engine engine) {
-            super(engine);
-            hook = new Thread(hookRunnable,"MapDB shutdown hook");
-            Runtime.getRuntime().addShutdownHook(hook);
+        public CloseOnJVMShutdown( Engine engine )
+        {
+            super( engine );
+            hook = new Thread( hookRunnable, "MapDB shutdown hook" );
+            Runtime.getRuntime().addShutdownHook( hook );
         }
 
         @Override
-        public void close() {
+        public void close()
+        {
             super.close();
-            if(!shutdownHappened.get() && hook!=null){
-                Runtime.getRuntime().removeShutdownHook(hook);
+            if( !shutdownHappened.get() && hook != null )
+            {
+                Runtime.getRuntime().removeShutdownHook( hook );
             }
             hook = null;
         }

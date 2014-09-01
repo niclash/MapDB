@@ -31,60 +31,65 @@ import org.mapdb.ValueSerializer;
 
 /**
  * {@link org.mapdb.Engine} wrapper which provides asynchronous serialization and asynchronous write.
+ * <p>
  * This class takes an object instance, passes it to background writer thread (using Write Queue)
  * where it is serialized and written to disk. Async write does not affect commit durability,
  * Write Queue is flushed into disk on each commit. Modified records are held in small instance cache,
  * until they are written into disk.
- *
- * This feature is disabled by default and can be enabled by calling {@link DBMakerImpl#asyncWriteEnable()}.
+ * </p>
+ * <p>
+ * This feature is disabled by default and can be enabled by calling {@link DbBuilderImpl#asyncWriteEnable()}.
  * Write Cache is flushed in regular intervals or when it becomes full. Flush interval is 100 ms by default and
- * can be controlled by {@link DBMakerImpl#asyncWriteFlushDelay(int)}. Increasing this interval may improve performance
- * in scenarios where frequently modified items should be cached, typically {@link org.mapdb.BTreeMap} import where keys
- * are presorted.
- *
+ * can be controlled by {@link org.mapdb.DBBuilder#asyncWriteFlushDelay(int)}. Increasing this interval may improve
+ * performance in scenarios where frequently modified items should be cached, typically {@link org.mapdb.BTreeMap}
+ * import where keys are presorted.
+ * </p>
+ * <p>
  * Asynchronous write does not affect commit durability. Write Queue is flushed during each commit, rollback and close call.
  * Those method also block until all records are written.
  * You may flush Write Queue manually by using {@link AsyncWriteEngine#clearCache()}  method.
  * There is global lock which prevents record being updated while commit is in progress.
- *
+ * </p>
+ * <p>
  * This wrapper starts one threads named `MapDB writer #N` (where N is static counter).
  * Async Writer takes modified records from Write Queue and writes them into store.
  * It also preallocates new recids, as finding empty `recids` takes time so small stash is pre-allocated.
  * It runs as `daemon`, so it does not prevent JVM to exit.
- *
+ * </p>
+ * <p>
  * Asynchronous Writes have several advantages (especially for single threaded user). But there are two things
  * user should be aware of:
+ * </p>
+ * <ul>
  *
- *  * Because data are serialized on back-ground thread, they need to be thread safe or better immutable.
- *    When you insert record into MapDB and modify it latter, this modification may happen before item
- *    was serialized and you may not be sure what version was persisted
+ * <li>Because data are serialized on back-ground thread, they need to be thread safe or better immutable.
+ * When you insert record into MapDB and modify it latter, this modification may happen before item
+ * was serialized and you may not be sure what version was persisted</li>
  *
- *  * Inter-thread communication has some overhead.
- *    There is also only single Writer Thread, which may create  single bottle-neck.
- *    This usually not issue for
- *    single or two threads, but in multi-threaded environment it may decrease performance.
- *    So in truly concurrent environments with many updates (network servers, parallel computing )
- *    you should keep Asynchronous Writes disabled.
- *
- *
- * @see org.mapdb.Engine
- * @see org.mapdb.impl.EngineWrapper
+ * <li>Inter-thread communication has some overhead.
+ * There is also only single Writer Thread, which may create  single bottle-neck.
+ * This usually not issue for
+ * single or two threads, but in multi-threaded environment it may decrease performance.
+ * So in truly concurrent environments with many updates (network servers, parallel computing )
+ * you should keep Asynchronous Writes disabled.</li>
+ * </ul>
  *
  * @author Jan Kotek
- *
- *
- *
+ * @see org.mapdb.Engine
+ * @see org.mapdb.impl.EngineWrapper
  */
 public class AsyncWriteEngine extends EngineWrapper implements Engine
 {
 
-    /** ensures thread name is followed by number */
+    /**
+     * ensures thread name is followed by number
+     */
     protected static final AtomicLong threadCounter = new AtomicLong();
 
-
-    /** used to signal that object was deleted*/
+    /**
+     * used to signal that object was deleted
+     */
     protected static final Object TOMBSTONE = new Object();
-
 
     protected final int maxSize;
 
@@ -94,54 +99,64 @@ public class AsyncWriteEngine extends EngineWrapper implements Engine
 //    protected int newRecidsPos = 0;
 //    protected final ReentrantLock newRecidsLock = new ReentrantLock(CC.FAIR_LOCKS);
 
-
-    /** Associates `recid` from Write Queue with record data and serializer. */
-    protected final LongConcurrentHashMap<Fun.Tuple2<Object, ValueSerializer>> writeCache
-            = new LongConcurrentHashMap<Fun.Tuple2<Object, ValueSerializer>>();
-
-    /** Each insert to Write Queue must hold read lock.
-     *  Commit, rollback and close operations must hold write lock
+    /**
+     * Associates `recid` from Write Queue with record data and serializer.
      */
-    protected final ReentrantReadWriteLock commitLock = new ReentrantReadWriteLock( CC.FAIR_LOCKS);
+    protected final LongConcurrentHashMap<Fun.Tuple2<Object, ValueSerializer>> writeCache
+        = new LongConcurrentHashMap<Fun.Tuple2<Object, ValueSerializer>>();
 
-    /** number of active threads running, used to await thread termination on close */
-    protected final CountDownLatch activeThreadsCount = new CountDownLatch(1);
+    /**
+     * Each insert to Write Queue must hold read lock.
+     * Commit, rollback and close operations must hold write lock
+     */
+    protected final ReentrantReadWriteLock commitLock = new ReentrantReadWriteLock( CC.FAIR_LOCKS );
 
-    /** If background thread fails with exception, it is stored here, and rethrown to all callers.*/
+    /**
+     * number of active threads running, used to await thread termination on close
+     */
+    protected final CountDownLatch activeThreadsCount = new CountDownLatch( 1 );
+
+    /**
+     * If background thread fails with exception, it is stored here, and rethrown to all callers.
+     */
     protected volatile Throwable threadFailedException = null;
 
-    /** indicates that `close()` was called and background threads are being terminated*/
+    /**
+     * indicates that `close()` was called and background threads are being terminated
+     */
     protected volatile boolean closeInProgress = false;
 
-    /** flush Write Queue every N milliseconds  */
+    /**
+     * flush Write Queue every N milliseconds
+     */
     protected final int asyncFlushDelay;
 
-    protected final AtomicReference<CountDownLatch> action = new AtomicReference<CountDownLatch>(null);
-
-
+    protected final AtomicReference<CountDownLatch> action = new AtomicReference<CountDownLatch>( null );
 
     /**
      * Construct new class and starts background threads.
      * User may provide executor in which background tasks will be executed,
      * otherwise MapDB starts two daemon threads.
      *
-     * @param engine which stores data.
+     * @param engine           which stores data.
      * @param _asyncFlushDelay flush Write Queue every N milliseconds
-     * @param executor optional executor to run tasks. If null daemon threads will be created
+     * @param executor         optional executor to run tasks. If null daemon threads will be created
      */
-    public AsyncWriteEngine(Engine engine, int _asyncFlushDelay, int queueSize, Executor executor) {
-        super(engine);
+    public AsyncWriteEngine( Engine engine, int _asyncFlushDelay, int queueSize, Executor executor )
+    {
+        super( engine );
         this.asyncFlushDelay = _asyncFlushDelay;
         this.maxSize = queueSize;
-        startThreads(executor);
+        startThreads( executor );
     }
 
-    public AsyncWriteEngine(Engine engine) {
-        this(engine, CC.ASYNC_WRITE_FLUSH_DELAY, CC.ASYNC_WRITE_QUEUE_SIZE, null);
+    public AsyncWriteEngine( Engine engine )
+    {
+        this( engine, CC.ASYNC_WRITE_FLUSH_DELAY, CC.ASYNC_WRITE_QUEUE_SIZE, null );
     }
 
-
-    protected static final class WriterRunnable implements Runnable{
+    protected static final class WriterRunnable implements Runnable
+    {
 
         protected final WeakReference<AsyncWriteEngine> engineRef;
         protected final long asyncFlushDelay;
@@ -149,37 +164,61 @@ public class AsyncWriteEngine extends EngineWrapper implements Engine
         protected final int maxParkSize;
         private final ReentrantReadWriteLock commitLock;
 
-
-        public WriterRunnable(AsyncWriteEngine engine) {
-            this.engineRef = new WeakReference<AsyncWriteEngine>(engine);
+        public WriterRunnable( AsyncWriteEngine engine )
+        {
+            this.engineRef = new WeakReference<AsyncWriteEngine>( engine );
             this.asyncFlushDelay = engine.asyncFlushDelay;
             this.commitLock = engine.commitLock;
             this.size = engine.size;
-            this.maxParkSize = engine.maxSize/4;
+            this.maxParkSize = engine.maxSize / 4;
         }
 
-        @Override public void run() {
-            try{
+        @Override
+        public void run()
+        {
+            try
+            {
                 //run in loop
-                for(;;){
+                for(; ; )
+                {
 
                     //if conditions are right, slow down writes a bit
-                    if(asyncFlushDelay!=0 && !commitLock.isWriteLocked() && size.get()<maxParkSize){
-                        LockSupport.parkNanos(1000L * 1000L * asyncFlushDelay);
+                    if( asyncFlushDelay != 0 && !commitLock.isWriteLocked() && size.get() < maxParkSize )
+                    {
+                        LockSupport.parkNanos( 1000L * 1000L * asyncFlushDelay );
                     }
 
                     AsyncWriteEngine engine = engineRef.get();
-                    if(engine==null) return; //stop thread if this engine has been GCed
-                    if(engine.threadFailedException !=null) return; //other thread has failed, no reason to continue
+                    if( engine == null )
+                    {
+                        return; //stop thread if this engine has been GCed
+                    }
+                    if( engine.threadFailedException != null )
+                    {
+                        return; //other thread has failed, no reason to continue
+                    }
 
-                    if(!engine.runWriter()) return;
+                    if( !engine.runWriter() )
+                    {
+                        return;
+                    }
                 }
-            } catch (Throwable e) {
+            }
+            catch( Throwable e )
+            {
                 AsyncWriteEngine engine = engineRef.get();
-                if(engine!=null) engine.threadFailedException = e;
-            }finally {
+                if( engine != null )
+                {
+                    engine.threadFailedException = e;
+                }
+            }
+            finally
+            {
                 AsyncWriteEngine engine = engineRef.get();
-                if(engine!=null) engine.activeThreadsCount.countDown();
+                if( engine != null )
+                {
+                    engine.activeThreadsCount.countDown();
+                }
             }
         }
     }
@@ -190,94 +229,130 @@ public class AsyncWriteEngine extends EngineWrapper implements Engine
      *
      * @param executor optional executor to run tasks, if null deamon threads will be created
      */
-    protected void startThreads(Executor executor) {
-        final Runnable writerRun = new WriterRunnable(this);
+    protected void startThreads( Executor executor )
+    {
+        final Runnable writerRun = new WriterRunnable( this );
 
-        if(executor!=null){
-            executor.execute(writerRun);
+        if( executor != null )
+        {
+            executor.execute( writerRun );
             return;
         }
         final long threadNum = threadCounter.incrementAndGet();
-        Thread writerThread = new Thread(writerRun,"MapDB writer #"+threadNum);
-        writerThread.setDaemon(true);
+        Thread writerThread = new Thread( writerRun, "MapDB writer #" + threadNum );
+        writerThread.setDaemon( true );
         writerThread.start();
     }
 
+    /**
+     * runs on background thread. Takes records from Write Queue, serializes and writes them.
+     */
+    protected boolean runWriter()
+        throws InterruptedException
+    {
+        final CountDownLatch latch = action.getAndSet( null );
 
-    /** runs on background thread. Takes records from Write Queue, serializes and writes them.*/
-    protected boolean runWriter() throws InterruptedException {
-        final CountDownLatch latch = action.getAndSet(null);
-
-        do{
+        do
+        {
             LongMap.LongMapIterator<Fun.Tuple2<Object, ValueSerializer>> iter = writeCache.longMapIterator();
-            while(iter.moveToNext()){
+            while( iter.moveToNext() )
+            {
                 //usual write
                 final long recid = iter.key();
                 Fun.Tuple2<Object, ValueSerializer> item = iter.value();
-                if(item == null) continue; //item was already written
-                if(item.a==TOMBSTONE){
+                if( item == null )
+                {
+                    continue; //item was already written
+                }
+                if( item.a == TOMBSTONE )
+                {
                     //item was not updated, but deleted
-                    AsyncWriteEngine.super.delete(recid, item.b);
-                }else{
+                    AsyncWriteEngine.super.delete( recid, item.b );
+                }
+                else
+                {
                     //call update as usual
-                    AsyncWriteEngine.super.update(recid, item.a, item.b);
+                    AsyncWriteEngine.super.update( recid, item.a, item.b );
                 }
                 //record has been written to underlying Engine, so remove it from cache with CAS
-                if(writeCache.remove(recid, item))
+                if( writeCache.remove( recid, item ) )
+                {
                     size.decrementAndGet();
-
+                }
             }
-        }while(latch!=null && !writeCache.isEmpty());
-
+        }
+        while( latch != null && !writeCache.isEmpty() );
 
         //operations such as commit,close, compact or close needs to be executed in Writer Thread
         //for this case CountDownLatch is used, it also signals when operations has been completed
         //CountDownLatch is used as special case to signalise special operation
-        if(latch!=null){
-            assert(writeCache.isEmpty());
+        if( latch != null )
+        {
+            assert ( writeCache.isEmpty() );
 
             final long count = latch.getCount();
-            if(count == 0){ //close operation
-                if(CC.LOG_EWRAP && LOG.isLoggable(Level.FINE))
-                    LOG.fine("Async close finished");
+            if( count == 0 )
+            { //close operation
+                if( CC.LOG_EWRAP && LOG.isLoggable( Level.FINE ) )
+                {
+                    LOG.fine( "Async close finished" );
+                }
                 return false;
-            }else if(count == 1){ //commit operation
+            }
+            else if( count == 1 )
+            { //commit operation
                 AsyncWriteEngine.super.commit();
-                if(CC.LOG_EWRAP && LOG.isLoggable(Level.FINE))
-                    LOG.fine("Async commit finished");
+                if( CC.LOG_EWRAP && LOG.isLoggable( Level.FINE ) )
+                {
+                    LOG.fine( "Async commit finished" );
+                }
 
                 latch.countDown();
-            }else if(count==2){ //rollback operation
+            }
+            else if( count == 2 )
+            { //rollback operation
                 AsyncWriteEngine.super.rollback();
-                if(CC.LOG_EWRAP && LOG.isLoggable(Level.FINE))
-                    LOG.fine("Async rollback finished");
+                if( CC.LOG_EWRAP && LOG.isLoggable( Level.FINE ) )
+                {
+                    LOG.fine( "Async rollback finished" );
+                }
 
                 latch.countDown();
                 latch.countDown();
-            }else if(count==3){ //compact operation
+            }
+            else if( count == 3 )
+            { //compact operation
                 AsyncWriteEngine.super.compact();
-                if(CC.LOG_EWRAP && LOG.isLoggable(Level.FINE))
-                    LOG.fine("Async compact finished");
+                if( CC.LOG_EWRAP && LOG.isLoggable( Level.FINE ) )
+                {
+                    LOG.fine( "Async compact finished" );
+                }
                 latch.countDown();
                 latch.countDown();
                 latch.countDown();
-            }else{throw new AssertionError();}
+            }
+            else
+            {
+                throw new AssertionError();
+            }
         }
         return true;
-
-
     }
 
-
-    /** checks that background threads are ready and throws exception if not */
-    protected void checkState() {
-        if(closeInProgress) throw new IllegalAccessError("db has been closed");
-        if(threadFailedException !=null) throw new RuntimeException("Writer thread failed", threadFailedException);
+    /**
+     * checks that background threads are ready and throws exception if not
+     */
+    protected void checkState()
+    {
+        if( closeInProgress )
+        {
+            throw new IllegalAccessError( "db has been closed" );
+        }
+        if( threadFailedException != null )
+        {
+            throw new RuntimeException( "Writer thread failed", threadFailedException );
+        }
     }
-
-
-
-
 
     /**
      * {@inheritDoc}
@@ -291,64 +366,75 @@ public class AsyncWriteEngine extends EngineWrapper implements Engine
      *
      * ![async-put](async-put.png)
      *
-     @uml async-put.png
-     actor user
-     participant "put method" as put
-     participant "Writer Thread" as wri
-     note over wri: has preallocated \n recids in queue
-     activate put
-     user -> put: User calls put method
-     wri-> put: takes preallocated recid
-     put -> wri: forward record into Write Queue
-     put -> user: return recid to user
-     deactivate put
-     note over wri: eventually\n writes record\n before commit
+     * @uml async-put.png
+     * actor user
+     * participant "put method" as put
+     * participant "Writer Thread" as wri
+     * note over wri: has preallocated \n recids in queue
+     * activate put
+     * user -> put: User calls put method
+     * wri-> put: takes preallocated recid
+     * put -> wri: forward record into Write Queue
+     * put -> user: return recid to user
+     * deactivate put
+     * note over wri: eventually\n writes record\n before commit
      */
     @Override
-    public <A> long put(A value, ValueSerializer<A> serializer) {
+    public <A> long put( A value, ValueSerializer<A> serializer )
+    {
         int size2 = 0;
-        long recid =0;
+        long recid = 0;
         commitLock.readLock().lock();
-        try{
+        try
+        {
             checkState();
             recid = preallocate();
-            if(writeCache.put(recid, new Fun.Tuple2(value, serializer))==null)
+            if( writeCache.put( recid, new Fun.Tuple2( value, serializer ) ) == null )
+            {
                 size2 = size.incrementAndGet();
-        }finally{
+            }
+        }
+        finally
+        {
             commitLock.readLock().unlock();
         }
-        if(size2>maxSize)
+        if( size2 > maxSize )
+        {
             clearCache();
+        }
         return recid;
-
-}
-
+    }
 
     /**
      * {@inheritDoc}
      *
      * This method first looks up into Write Cache if record is not currently being written.
      * If not it continues as usually
-     *
-     *
      */
     @Override
-    public <A> A get(long recid, ValueSerializer<A> serializer) {
+    public <A> A get( long recid, ValueSerializer<A> serializer )
+    {
         commitLock.readLock().lock();
-        try{
+        try
+        {
             checkState();
-            Fun.Tuple2<Object,ValueSerializer> item = writeCache.get(recid);
-            if(item!=null){
-                if(item.a == TOMBSTONE) return null;
+            Fun.Tuple2<Object, ValueSerializer> item = writeCache.get( recid );
+            if( item != null )
+            {
+                if( item.a == TOMBSTONE )
+                {
+                    return null;
+                }
                 return (A) item.a;
             }
 
-            return super.get(recid, serializer);
-        }finally{
+            return super.get( recid, serializer );
+        }
+        finally
+        {
             commitLock.readLock().unlock();
         }
     }
-
 
     /**
      * {@inheritDoc}
@@ -356,6 +442,7 @@ public class AsyncWriteEngine extends EngineWrapper implements Engine
      * This methods forwards record into Writer Thread and returns asynchronously.
      *
      * ![async-update](async-update.png)
+     *
      * @uml async-update.png
      * actor user
      * participant "update method" as upd
@@ -368,18 +455,26 @@ public class AsyncWriteEngine extends EngineWrapper implements Engine
      * note over wri: eventually\n writes record\n before commit
      */
     @Override
-    public <A> void update(long recid, A value, ValueSerializer<A> serializer) {
+    public <A> void update( long recid, A value, ValueSerializer<A> serializer )
+    {
         int size2 = 0;
         commitLock.readLock().lock();
-        try{
+        try
+        {
             checkState();
-            if(writeCache.put(recid, new Fun.Tuple2(value, serializer))==null)
+            if( writeCache.put( recid, new Fun.Tuple2( value, serializer ) ) == null )
+            {
                 size2 = size.incrementAndGet();
-        }finally{
+            }
+        }
+        finally
+        {
             commitLock.readLock().unlock();
         }
-        if(size2>maxSize)
+        if( size2 > maxSize )
+        {
             clearCache();
+        }
     }
 
     /**
@@ -390,154 +485,190 @@ public class AsyncWriteEngine extends EngineWrapper implements Engine
      * Asynchronicity does not affect atomicity.
      */
     @Override
-    public <A> boolean compareAndSwap(long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer) {
+    public <A> boolean compareAndSwap( long recid, A expectedOldValue, A newValue, ValueSerializer<A> serializer )
+    {
         int size2 = 0;
         boolean ret;
         commitLock.writeLock().lock();
-        try{
+        try
+        {
             checkState();
-            Fun.Tuple2<Object, ValueSerializer> existing = writeCache.get(recid);
-            A oldValue = existing!=null? (A) existing.a : super.get(recid, serializer);
-            if(oldValue == expectedOldValue || (oldValue!=null && oldValue.equals(expectedOldValue))){
-                if(writeCache.put(recid, new Fun.Tuple2(newValue, serializer))==null)
+            Fun.Tuple2<Object, ValueSerializer> existing = writeCache.get( recid );
+            A oldValue = existing != null ? (A) existing.a : super.get( recid, serializer );
+            if( oldValue == expectedOldValue || ( oldValue != null && oldValue.equals( expectedOldValue ) ) )
+            {
+                if( writeCache.put( recid, new Fun.Tuple2( newValue, serializer ) ) == null )
+                {
                     size2 = size.incrementAndGet();
+                }
                 ret = true;
-            }else{
+            }
+            else
+            {
                 ret = false;
             }
-        }finally{
+        }
+        finally
+        {
             commitLock.writeLock().unlock();
         }
-        if(size2>maxSize)
+        if( size2 > maxSize )
+        {
             clearCache();
+        }
         return ret;
     }
 
     /**
      * {@inheritDoc}
      *
-     *  This method places 'tombstone' into Write Queue so record is eventually
-     *  deleted asynchronously. However record is visible as deleted immediately.
+     * This method places 'tombstone' into Write Queue so record is eventually
+     * deleted asynchronously. However record is visible as deleted immediately.
      */
     @Override
-    public <A> void delete(long recid, ValueSerializer<A> serializer) {
-        update(recid, (A) TOMBSTONE, serializer);
+    public <A> void delete( long recid, ValueSerializer<A> serializer )
+    {
+        update( recid, (A) TOMBSTONE, serializer );
     }
 
     /**
      * {@inheritDoc}
      *
-     *  This method blocks until Write Queue is flushed and Writer Thread writes all records and finishes.
-     *  When this method was called `closeInProgress` is set and no record can be modified.
+     * This method blocks until Write Queue is flushed and Writer Thread writes all records and finishes.
+     * When this method was called `closeInProgress` is set and no record can be modified.
      */
     @Override
-    public void close() {
+    public void close()
+    {
         commitLock.writeLock().lock();
-        try {
-            if(closeInProgress) return;
+        try
+        {
+            if( closeInProgress )
+            {
+                return;
+            }
             checkState();
             closeInProgress = true;
             //notify background threads
-            if(!action.compareAndSet(null,new CountDownLatch(0)))
+            if( !action.compareAndSet( null, new CountDownLatch( 0 ) ) )
+            {
                 throw new AssertionError();
+            }
 
             //wait for background threads to shutdown
 
-            while(!activeThreadsCount.await(1000,TimeUnit.MILLISECONDS)) {
+            while( !activeThreadsCount.await( 1000, TimeUnit.MILLISECONDS ) )
+            {
                 //nothing here
             }
 
             AsyncWriteEngine.super.close();
-
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }finally {
+        }
+        catch( InterruptedException e )
+        {
+            throw new RuntimeException( e );
+        }
+        finally
+        {
             commitLock.writeLock().unlock();
         }
     }
 
-
-
-    protected void waitForAction(int actionNumber) {
+    protected void waitForAction( int actionNumber )
+    {
         commitLock.writeLock().lock();
-        try{
+        try
+        {
             checkState();
             //notify background threads
-            CountDownLatch msg = new CountDownLatch(actionNumber);
-            if(!action.compareAndSet(null,msg))
+            CountDownLatch msg = new CountDownLatch( actionNumber );
+            if( !action.compareAndSet( null, msg ) )
+            {
                 throw new AssertionError();
+            }
 
             //wait for response from writer thread
-            while(!msg.await(100, TimeUnit.MILLISECONDS)){
+            while( !msg.await( 100, TimeUnit.MILLISECONDS ) )
+            {
                 checkState();
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }finally {
+        }
+        catch( InterruptedException e )
+        {
+            throw new RuntimeException( e );
+        }
+        finally
+        {
             commitLock.writeLock().unlock();
         }
     }
 
-
     /**
      * {@inheritDoc}
      *
-     *  This method blocks until Write Queue is flushed.
-     *  All put/update/delete methods are blocked while commit is in progress (via global ReadWrite Commit Lock).
-     *  After this method returns, commit lock is released and other operations may continue
+     * This method blocks until Write Queue is flushed.
+     * All put/update/delete methods are blocked while commit is in progress (via global ReadWrite Commit Lock).
+     * After this method returns, commit lock is released and other operations may continue
      */
     @Override
-    public void commit() {
-        waitForAction(1);
+    public void commit()
+    {
+        waitForAction( 1 );
     }
 
     /**
      * {@inheritDoc}
      *
-     *  This method blocks until Write Queue is cleared.
-     *  All put/update/delete methods are blocked while rollback is in progress (via global ReadWrite Commit Lock).
-     *  After this method returns, commit lock is released and other operations may continue
+     * This method blocks until Write Queue is cleared.
+     * All put/update/delete methods are blocked while rollback is in progress (via global ReadWrite Commit Lock).
+     * After this method returns, commit lock is released and other operations may continue
      */
     @Override
-    public void rollback() {
-        waitForAction(2);
+    public void rollback()
+    {
+        waitForAction( 2 );
     }
 
     /**
      * {@inheritDoc}
      *
      * This method blocks all put/update/delete operations until it finishes (via global ReadWrite Commit Lock).
-     *
      */
     @Override
-    public void compact() {
-        waitForAction(3);
+    public void compact()
+    {
+        waitForAction( 3 );
     }
-
 
     /**
      * {@inheritDoc}
      *
-     *  This method blocks until Write Queue is empty (written into disk).
-     *  It also blocks any put/update/delete operations until it finishes (via global ReadWrite Commit Lock).
+     * This method blocks until Write Queue is empty (written into disk).
+     * It also blocks any put/update/delete operations until it finishes (via global ReadWrite Commit Lock).
      */
     @Override
-    public void clearCache() {
+    public void clearCache()
+    {
         commitLock.writeLock().lock();
-        try{
+        try
+        {
 
             checkState();
             //wait for response from writer thread
-            while(!writeCache.isEmpty()){
+            while( !writeCache.isEmpty() )
+            {
                 checkState();
-                Thread.sleep(100);
+                Thread.sleep( 100 );
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }finally {
+        }
+        catch( InterruptedException e )
+        {
+            throw new RuntimeException( e );
+        }
+        finally
+        {
             commitLock.writeLock().unlock();
         }
         super.clearCache();
     }
-
 }

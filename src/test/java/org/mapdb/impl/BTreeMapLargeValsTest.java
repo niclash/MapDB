@@ -40,6 +40,11 @@ public class BTreeMapLargeValsTest extends ConcurrentMapInterfaceTest<Integer, S
     }
 
     @Override
+    public void tearDown() {
+        r.close();
+    }
+
+    @Override
     protected Integer getKeyNotInPopulatedMap()
         throws UnsupportedOperationException
     {

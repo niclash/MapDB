@@ -8,6 +8,7 @@ import java.util.NavigableSet;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mapdb.BTreeMap;
@@ -39,6 +40,13 @@ public class BTreeMapTest
         m = new BTreeMapImpl( engine, BTreeMapImpl.createRootRef( engine, BTreeKeySerializer.BASIC, SerializerBase.BASIC, BTreeMapImpl.COMPARABLE_COMPARATOR, 0 ),
                               6, false, 0, BTreeKeySerializer.BASIC, SerializerBase.BASIC,
                               BTreeMapImpl.COMPARABLE_COMPARATOR, 0, false );
+    }
+
+    @After
+    public void cleanupTest()
+    {
+        m.close();
+        engine.close();
     }
 
     @Test

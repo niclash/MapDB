@@ -24,6 +24,8 @@ public class BTreeMapTest3
     extends ConcurrentMapInterfaceTest<Integer, String>
 {
 
+    private DB db;
+
     public BTreeMapTest3()
     {
         super( false, false, true, true, true, true, false );
@@ -54,7 +56,19 @@ public class BTreeMapTest3
     protected ConcurrentNavigableMap<Integer, String> makeEmptyMap()
         throws UnsupportedOperationException
     {
-        return DBMaker.newMemoryDB().make().getTreeMap( "test" );
+        db = DBMaker.newMemoryDB().make();
+        return db.getTreeMap( "test" );
+    }
+
+    @Override
+    public void tearDown()
+        throws Exception
+    {
+        super.tearDown();
+        if( db != null )
+        {
+            db.close();
+        }
     }
 
     @Override

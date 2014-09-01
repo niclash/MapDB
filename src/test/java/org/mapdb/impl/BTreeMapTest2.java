@@ -37,6 +37,11 @@ public class BTreeMapTest2 extends ConcurrentMapInterfaceTest<Integer, String>
         r = new StoreDirect( Volume.memoryFactory( false, 0L, CC.VOLUME_SLICE_SHIFT ) );
     }
 
+    @Override public void tearDown()
+    {
+        r.close();
+    }
+
     @Override
     protected Integer getKeyNotInPopulatedMap()
         throws UnsupportedOperationException

@@ -5,7 +5,8 @@ import java.io.IOError;
 import java.io.IOException;
 import java.util.NavigableSet;
 import java.util.Set;
-import org.mapdb.impl.DBMakerImpl;
+import org.mapdb.impl.DbBuilderImpl;
+import org.mapdb.impl.DbFactoryImpl;
 
 public class DBMaker
 {
@@ -13,7 +14,7 @@ public class DBMaker
 
     static
     {
-        factory = new DBMakerImpl();
+        factory = new DbFactoryImpl();
     }
 
     public static void setFactory( DBFactory _factory ){
@@ -23,24 +24,24 @@ public class DBMaker
      * Creates new in-memory database which stores all data on heap without serialization.
      * This mode should be very fast, but data will affect Garbage Collector the same way as traditional Java Collections.
      */
-    public static DBFactory newHeapDB(){
-        return factory.newHeapDB();
+    public static DBBuilder newHeapDB(){
+        return factory.createBuilder().newHeapDB();
     }
 
     /** Creates new in-memory database. Changes are lost after JVM exits.
      * <p/>
      * This will use HEAP memory so Garbage Collector is affected.
      */
-    public static DBFactory newMemoryDB(){
-        return factory.newMemoryDB();
+    public static DBBuilder newMemoryDB(){
+        return factory.createBuilder().newMemoryDB();
     }
 
     /** Creates new in-memory database. Changes are lost after JVM exits.
      * <p/>
      * This will use DirectByteBuffer outside of HEAP, so Garbage Collector is not affected
      */
-    public static DBFactory newMemoryDirectDB(){
-        return factory.newMemoryDirectDB();
+    public static DBBuilder newMemoryDirectDB(){
+        return factory.createBuilder().newMemoryDirectDB();
     }
 
     /**
@@ -50,8 +51,8 @@ public class DBMaker
      * @param file
      * @return maker
      */
-    public static DBFactory newAppendFileDB(File file) {
-        return factory.newAppendFileDB( file );
+    public static DBBuilder newAppendFileDB(File file) {
+        return factory.createBuilder().newAppendFileDB( file );
     }
 
 
@@ -118,7 +119,7 @@ public class DBMaker
     /**
      * Creates new database in temporary folder.
      */
-    public static DBFactory newTempFileDB() {
+    public static DBBuilder newTempFileDB() {
         try {
             return newFileDB(File.createTempFile("mapdb-temp","db"));
         } catch (IOException e) {
@@ -168,8 +169,8 @@ public class DBMaker
     }
 
     /** Creates or open database stored in file. */
-    public static DBFactory newFileDB(File file){
-        return factory.newFileDB( file );
+    public static DBBuilder newFileDB(File file){
+        return factory.createBuilder().newFileDB( file );
     }
 
 

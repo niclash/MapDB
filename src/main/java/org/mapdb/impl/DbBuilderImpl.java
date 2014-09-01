@@ -17,7 +17,7 @@
 package org.mapdb.impl;
 
 import org.mapdb.DB;
-import org.mapdb.DBFactory;
+import org.mapdb.DBBuilder;
 import org.mapdb.Engine;
 import org.mapdb.TxMaker;
 import org.mapdb.impl.EngineWrapper.ReadOnlyEngine;
@@ -31,8 +31,8 @@ import java.util.*;
  *
  * @author Jan Kotek
  */
-public class DBMakerImpl
-    implements DBFactory
+public class DbBuilderImpl
+    implements DBBuilder
 {
 
     protected final String TRUE = "true";
@@ -103,34 +103,34 @@ public class DBMakerImpl
     protected Properties props = new Properties();
 
     /** use static factory methods, or make subclass */
-    public DBMakerImpl(){}
+    public DbBuilderImpl(){}
 
-    public DBFactory newHeapDB(){
+    public DBBuilder newHeapDB(){
         props.setProperty(Keys.store,Keys.store_heap);
         return this;
     }
 
 
-    public DBFactory newMemoryDB(){
+    public DBBuilder newMemoryDB(){
         props.setProperty(Keys.volume,Keys.volume_byteBuffer);
         return this;
     }
 
-    public  DBFactory newMemoryDirectDB() {
+    public DBBuilder newMemoryDirectDB() {
         props.setProperty(Keys.volume,Keys.volume_directByteBuffer);
         return this;
     }
 
 
 
-    public DBFactory newAppendFileDB( File file ) {
+    public DBBuilder newAppendFileDB( File file ) {
         props.setProperty(Keys.file, file.getPath());
         props.setProperty(Keys.store, Keys.store_append);
         return this;
     }
 
     @Override
-    public DBFactory newFileDB( File file ){
+    public DBBuilder newFileDB( File file ){
         props.setProperty(Keys.file, file.getPath());
         return this;
     }
@@ -149,7 +149,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory transactionDisable(){
+    public DBBuilder transactionDisable(){
         props.put(Keys.transactionDisable,TRUE);
         return this;
     }
@@ -171,7 +171,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory cacheCondition( Fun.RecordCondition cacheCondition ){
+    public DBBuilder cacheCondition( Fun.RecordCondition cacheCondition ){
         this.cacheCondition = cacheCondition;
         return this;
     }
@@ -188,7 +188,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory cacheDisable(){
+    public DBBuilder cacheDisable(){
         props.put(Keys.cache,Keys.cache_disable);
         return this;
     }
@@ -204,7 +204,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory cacheHardRefEnable(){
+    public DBBuilder cacheHardRefEnable(){
         props.put(Keys.cache,Keys.cache_hardRef);
         return this;
     }
@@ -217,7 +217,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory cacheWeakRefEnable(){
+    public DBBuilder cacheWeakRefEnable(){
         props.put(Keys.cache,Keys.cache_weakRef);
         return this;
     }
@@ -229,7 +229,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory cacheSoftRefEnable(){
+    public DBBuilder cacheSoftRefEnable(){
         props.put(Keys.cache,Keys.cache_softRef);
         return this;
     }
@@ -240,7 +240,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory cacheLRUEnable(){
+    public DBBuilder cacheLRUEnable(){
         props.put(Keys.cache,Keys.cache_lru);
         return this;
     }
@@ -252,7 +252,7 @@ public class DBMakerImpl
      * mode.
      */
     @Override
-    public DBFactory mmapFileEnable() {
+    public DBBuilder mmapFileEnable() {
         assertNotInMemoryVolume();
         props.setProperty(Keys.volume,Keys.volume_mmapf);
         return this;
@@ -272,7 +272,7 @@ public class DBMakerImpl
      *
      */
     @Override
-    public DBFactory mmapFileEnablePartial() {
+    public DBBuilder mmapFileEnablePartial() {
         assertNotInMemoryVolume();
         props.setProperty(Keys.volume,Keys.volume_mmapfPartial);
         return this;
@@ -289,7 +289,7 @@ public class DBMakerImpl
      * Enable Memory Mapped Files only if current JVM supports it (is 64bit).
      */
     @Override
-    public DBFactory mmapFileEnableIfSupported() {
+    public DBBuilder mmapFileEnableIfSupported() {
         assertNotInMemoryVolume();
         props.setProperty(Keys.volume,Keys.volume_mmapfIfSupported);
         return this;
@@ -307,7 +307,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory cacheSize( int cacheSize ){
+    public DBBuilder cacheSize( int cacheSize ){
         props.setProperty(Keys.cacheSize,""+cacheSize);
         return this;
     }
@@ -319,7 +319,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory snapshotEnable(){
+    public DBBuilder snapshotEnable(){
         props.setProperty(Keys.snapshots,TRUE);
         return this;
     }
@@ -335,7 +335,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory asyncWriteEnable(){
+    public DBBuilder asyncWriteEnable(){
         props.setProperty(Keys.asyncWrite,TRUE);
         return this;
     }
@@ -358,7 +358,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory asyncWriteFlushDelay( int delay ){
+    public DBBuilder asyncWriteFlushDelay( int delay ){
         props.setProperty(Keys.asyncWriteFlushDelay,""+delay);
         return this;
     }
@@ -372,7 +372,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory asyncWriteQueueSize( int queueSize ){
+    public DBBuilder asyncWriteQueueSize( int queueSize ){
         props.setProperty(Keys.asyncWriteQueueSize,""+queueSize);
         return this;
     }
@@ -390,7 +390,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory concurrencyDisable(){
+    public DBBuilder concurrencyDisable(){
         props.setProperty(Keys.concurrencyDisable,TRUE);
         return this;
     }
@@ -402,7 +402,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory deleteFilesAfterClose(){
+    public DBBuilder deleteFilesAfterClose(){
         props.setProperty(Keys.deleteFilesAfterClose,TRUE);
         return this;
     }
@@ -413,7 +413,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory closeOnJvmShutdown(){
+    public DBBuilder closeOnJvmShutdown(){
         props.setProperty(Keys.closeOnJvmShutdown,TRUE);
         return this;
     }
@@ -426,13 +426,13 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory compressionEnable(){
+    public DBBuilder compressionEnable(){
         props.setProperty(Keys.compression,Keys.compression_lzf);
         return this;
     }
 
 
-    public DBFactory encryptionEnable( String password ){
+    public DBBuilder encryptionEnable( String password ){
         return encryptionEnable(password.getBytes(Charset.forName("UTF8")));
     }
 
@@ -449,7 +449,7 @@ public class DBMakerImpl
      * @param password for encryption
      * @return this builder
      */
-    public DBFactory encryptionEnable(byte[] password){
+    public DBBuilder encryptionEnable(byte[] password){
         props.setProperty(Keys.encryption, Keys.encryption_xtea);
         props.setProperty(Keys.encryptionKey, toHexa(password));
         return this;
@@ -465,7 +465,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory checksumEnable(){
+    public DBBuilder checksumEnable(){
         props.setProperty(Keys.checksum,TRUE);
         return this;
     }
@@ -481,7 +481,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory strictDBGet(){
+    public DBBuilder strictDBGet(){
         props.setProperty(Keys.strictDBGet,TRUE);
         return this;
     }
@@ -496,7 +496,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory readOnly(){
+    public DBBuilder readOnly(){
         props.setProperty(Keys.readOnly,TRUE);
         return this;
     }
@@ -514,7 +514,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory freeSpaceReclaimQ( int q ){
+    public DBBuilder freeSpaceReclaimQ( int q ){
         if(q<0||q>10) throw new IllegalArgumentException("wrong Q");
         props.setProperty(Keys.freeSpaceReclaimQ,""+q);
         return this;
@@ -530,7 +530,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory commitFileSyncDisable(){
+    public DBBuilder commitFileSyncDisable(){
         props.setProperty(Keys.commitFileSyncDisable,TRUE);
         return this;
     }
@@ -546,7 +546,7 @@ public class DBMakerImpl
      * @return this builder
      */
     @Override
-    public DBFactory sizeLimit( double maxSize ){
+    public DBBuilder sizeLimit( double maxSize ){
         long size = (long) (maxSize * 1024D*1024D*1024D);
         props.setProperty(Keys.sizeLimit,""+size);
         return this;

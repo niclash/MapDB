@@ -385,17 +385,17 @@ public class DBMakerTest
     public void sizeLimit()
     {
         long g = 1024 * 1024 * 1024;
-        assertEquals( g / 2, ( (DBMakerImpl) DBMaker.newMemoryDB()
-            .sizeLimit( 0.5 ) ).propsGetLong( DBMakerImpl.Keys.sizeLimit, 0 ) );
-        assertEquals( g, ( (DBMakerImpl) DBMaker.newMemoryDB()
-            .sizeLimit( 1 ) ).propsGetLong( DBMakerImpl.Keys.sizeLimit, 0 ) );
+        assertEquals( g / 2, ( (DbBuilderImpl) DBMaker.newMemoryDB()
+            .sizeLimit( 0.5 ) ).propsGetLong( DbBuilderImpl.Keys.sizeLimit, 0 ) );
+        assertEquals( g, ( (DbBuilderImpl) DBMaker.newMemoryDB()
+            .sizeLimit( 1 ) ).propsGetLong( DbBuilderImpl.Keys.sizeLimit, 0 ) );
     }
 
     @Test
     public void keys_value_matches()
         throws IllegalAccessException
     {
-        Class c = DBMakerImpl.Keys.class;
+        Class c = DbBuilderImpl.Keys.class;
         Set<Integer> s = new TreeSet<Integer>();
         for( Field f : c.getDeclaredFields() )
         {

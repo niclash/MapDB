@@ -995,6 +995,11 @@ public class StoreDirect extends Store
     @Override
     public void close()
     {
+        if( isClosed() )
+        {
+            return;
+        }
+
         for( Runnable closeListener : closeListeners )
         {
             closeListener.run();
@@ -1011,11 +1016,9 @@ public class StoreDirect extends Store
                     {
                         serializerPojo.save( this );
                     }
-
                     index.putLong( IO_PHYS_SIZE, physSize );
                     index.putLong( IO_INDEX_SIZE, indexSize );
                     index.putLong( IO_FREE_SIZE, freeSize );
-
                     index.putLong( IO_INDEX_SUM, indexHeaderChecksum() );
                 }
 

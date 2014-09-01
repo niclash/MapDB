@@ -167,11 +167,10 @@ public interface Engine  extends Closeable {
      * Engine can no longer be used after this method was called. If Engine is used after closing, it may
      * throw any exception including <code>NullPointerException</code>
      * </p>
-     * There is an configuration option {@link org.mapdb.impl.DBMakerImpl#closeOnJvmShutdown()} which uses shutdown hook to automatically
-     * close Engine when JVM shutdowns.
+     * There is an configuration option {@link org.mapdb.DBBuilder#closeOnJvmShutdown()} which uses shutdown
+     * hook to automatically close Engine when JVM shutdowns.
      */
     void close();
-
 
     /**
      * Checks whether Engine was closed.
